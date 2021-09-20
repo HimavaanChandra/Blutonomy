@@ -10,17 +10,15 @@
     <!-- Set various other gazebo arguments-->
     <arg name="extra_gazebo_args" default="" />
     <!-- Start in a default namespace -->
-    <arg name="namespace" default="wamv" />
+    <arg name="namespace" default="wamv2" />
     <!-- Do we lock the vessel to the world? -->
     <arg name="wamv_locked" default="false" />
     <!-- Start paused? -->
     <arg name="paused" default="false" />
-    <!-- Acoustic pinger position(s) -->
-    <arg name="pinger_params" default="$(find vrx_gazebo)/config/pinger.yaml" />
 
     <!-- Initial USV location and attitude-->
-    <arg name="x" default="532" />
-    <arg name="y" default="-162" />
+    <arg name="x" default="530" />
+    <arg name="y" default="-160" />
     <arg name="z" default="0" />
     <arg name="P" default="0" />
     <arg name="R" default="0" />
@@ -45,19 +43,7 @@
     <arg name="lidar_enabled" default="false" />
     <arg name="ground_truth_enabled" default="false" />
 
-    <!-- Do we load the VRX sensor suite? -->
     <arg name="vrx_sensors_enabled" default="true" />
-
-    <!-- Start Gazebo with the world file -->
-    <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="world_name" value="$(arg world)" />
-        <arg name="verbose" value="$(arg verbose)" />
-        <arg name="paused" value="$(arg paused)" />
-        <arg name="use_sim_time" value="true" />
-        <arg name="gui" value="$(arg gui)" />
-        <arg name="enable_ros_network" value="$(arg enable_ros_network)" />
-        <arg name="extra_gazebo_args" value="$(arg extra_gazebo_args)" />
-    </include>
 
     <!-- Load robot model -->
     <arg name="urdf" default="$(find wamv_gazebo)/urdf/wamv_gazebo.urdf.xacro" />
@@ -71,21 +57,12 @@
          namespace:=$(arg namespace) " />
 
     <!-- Spawn model in Gazebo, script depending on non_competition_mode -->
-    <node name="spawn_model" pkg="gazebo_ros" type="spawn_model" if="$(arg non_competition_mode)" args="-x $(arg x) -y $(arg y) -z $(arg z)
+    <node name="spawn_model2" pkg="gazebo_ros" type="spawn_model" if="$(arg non_competition_mode)" args="-x $(arg x) -y $(arg y) -z $(arg z)
               -R $(arg R) -P $(arg P) -Y $(arg Y)
-              -urdf -param $(arg namespace)/robot_description -model wamv" />
+              -urdf -param $(arg namespace)/robot_description -model wamv2" />
 
-    <node name="spawn_wamv" pkg="vrx_gazebo" type="spawn_wamv.bash" unless="$(arg non_competition_mode)" args="-x $(arg x) -y $(arg y) -z $(arg z)
+    <node name="spawn_wamv2" pkg="vrx_gazebo" type="spawn_wamv.bash" unless="$(arg non_competition_mode)" args="-x $(arg x) -y $(arg y) -z $(arg z)
               -R $(arg R) -P $(arg P) -Y $(arg Y)
-              --urdf $(arg urdf) --model wamv" />
-
-    <include file="$(find vrx_gazebo)/launch/vehicle2.launch"></include>
-
-
-    <!-- Set the pinger location -->
-    <node name="set_pinger_position" pkg="vrx_gazebo" type="set_pinger_position.py" output="screen">
-        <rosparam command="load" file="$(arg pinger_params)" />
-    </node>
-    <node name="pinger_visualization" pkg="vrx_gazebo" type="pinger_visualization.py" />
+              --urdf $(arg urdf) --model wamv2" />
 
 </launch>
