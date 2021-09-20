@@ -20,9 +20,9 @@
 class Communication
 {
 public:
-    Communication(ros::Nodehandle nh);
+    Communication(ros::NodeHandle nh);
     ~Communication();
     ros::NodeHandle nh_;
 
 private:
-}
+};

@@ -20,9 +20,9 @@
 class Vehicle
 {
 public:
-    Vehicle(ros::Nodehandle nh);
+    Vehicle(ros::NodeHandle nh);
     ~Vehicle();
-    ros::Nodehandle nh_;
+    ros::NodeHandle nh_;
 
 private:
     cv::Mat image_; //Camera image
@@ -40,4 +40,4 @@ private:
     //     std::vector<float> ranges_;    /*!< Laser sensor data*/
     //     std::mutex mtx_;               /*!< mutex to lock data*/
     // };
-}
+};

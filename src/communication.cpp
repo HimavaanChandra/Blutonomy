@@ -1,6 +1,6 @@
 #include "communication.h"
 
-Communication::Communication(ros::Nodehandle nh) : nh_(nh)
+Communication::Communication(ros::NodeHandle nh) : nh_(nh)
 {
     //Subsribers
 

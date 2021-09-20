@@ -14,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
 )
 
-find_package(Boost REQUIRED COMPONENTS system signals)
+# find_package(Boost REQUIRED COMPONENTS system signals)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wdeprecated-declarations")
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
