@@ -1,7 +1,7 @@
 #include "ros/ros.h"
 #include "vehicle.h"
 #include "communication.h"
-
+#include <thread>   
 
 int main(int argc, char **argv)
 {
@@ -10,12 +10,12 @@ int main(int argc, char **argv)
 
     std::shared_ptr<Vehicle> vehicle(new Vehicle(nh));
     // std::thread t() -ADD program to run thread
-    // std::thread t(&Vehicle::functionName, vehicle); //example
+    std::thread t(&Vehicle::test, vehicle); //example
 
-    ros::spin();
+    ros::spinOnce(); //Might need to make just spin
 
     ros::shutdown();
-    // t.join()
+    t.join();
 
     return 0;
 }

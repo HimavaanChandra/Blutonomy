@@ -22,6 +22,7 @@ class Vehicle
 public:
     Vehicle(ros::NodeHandle nh);
     ~Vehicle();
+    void test(void); //Delete
     ros::NodeHandle nh_;
 
 private:

@@ -7,6 +7,11 @@ Vehicle::Vehicle(ros::NodeHandle nh) : nh_(nh)
     //Publishers
 }
 
+void Vehicle::test()
+{
+    std::cout <<"test" <<std::endl;
+}
+
 Vehicle::~Vehicle()
 {
 }
