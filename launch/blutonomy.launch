@@ -80,6 +80,35 @@
               -R $(arg R) -P $(arg P) -Y $(arg Y)
               --urdf $(arg urdf) --model wamv" />
 
-    <include file="$(find Blutonomy)/launch/vehicle2.launch"></include>
+
+    <!-- Spawn wamv 2-->
+    <arg name="wamv2" default="wamv2" />
+
+    <!-- Initial USV location and attitude-->
+    <arg name="x2" default="158" />
+    <arg name="y2" default="115" />
+    <arg name="z2" default="0.1" />
+    <arg name="P2" default="0" />
+    <arg name="R2" default="0" />
+    <arg name="Y2" default="-2.75" />
+
+    <!-- Load robot model -->
+    <param name="$(arg wamv2)/robot_description" command="$(find xacro)/xacro &#x002D;&#x002D;inorder '$(arg urdf)'
+         thruster_config:=$(arg thrust_config)
+         camera_enabled:=$(arg camera_enabled)
+         gps_enabled:=$(arg gps_enabled)
+         imu_enabled:=$(arg imu_enabled)
+         lidar_enabled:=$(arg lidar_enabled)
+         ground_truth_enabled:=$(arg ground_truth_enabled)
+         namespace:=$(arg wamv2) " />
+
+    <!-- Spawn model in Gazebo, script depending on non_competition_mode -->
+    <node name="spawn_model2" pkg="gazebo_ros" type="spawn_model" if="$(arg non_competition_mode)" args="-x $(arg x2) -y $(arg y2) -z $(arg z2)
+              -R $(arg R2) -P $(arg P2) -Y $(arg Y2)
+              -urdf -param $(arg wamv2)/robot_description -model wamv2" />
+
+    <node name="spawn_wamv2" pkg="vrx_gazebo" type="spawn_wamv.bash" unless="$(arg non_competition_mode)" args="-x $(arg x2) -y $(arg y2) -z $(arg z2)
+              -R $(arg R2) -P $(arg P2) -Y $(arg Y2)
+              --urdf $(arg urdf) --model wamv2" />
 
 </launch>
