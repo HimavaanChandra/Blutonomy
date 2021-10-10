@@ -86,6 +86,6 @@
               -R $(arg R) -P $(arg P) -Y $(arg Y)
               --urdf $(arg urdf) --model wamv" />
 
-    <include file="$(find vrx_gazebo)/launch/vehicle2.launch"></include>
+    <include file="$(find Blutonomy)/launch/vehicle2.launch"></include>
 
 </launch>
