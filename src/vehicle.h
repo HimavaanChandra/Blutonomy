@@ -5,6 +5,7 @@
 //Tidy up --------------------------------------------------------
 #include "ros/ros.h"
 #include "std_msgs/String.h"
+#include "std_msgs/Float32.h"
 #include "tf/transform_datatypes.h"
 
 #include "sensor_msgs/LaserScan.h"
@@ -27,6 +28,23 @@ public:
 
 private:
     cv::Mat image_; //Camera image
+
+    ros::Publisher lateral_thrust_;
+    ros::Publisher lateral_thrust_angle_;
+
+    ros::Publisher left_thrust_;
+    ros::Publisher left_thrust_angle_;
+
+    ros::Publisher right_thrust_;
+    ros::Publisher right_thrust_angle_;
+
+    std_msgs::Float32 l_thrust_;
+    std_msgs::Float32 r_thrust_;
+
+    std_msgs::Float32 l_thrust_angle_;
+    std_msgs::Float32 r_thrust_angle_;
+
+    void control(void);
     // image_transport::ImageTransport it_;
     // image_transport::Publisher image_pub_; /*!< image publisher*/
 

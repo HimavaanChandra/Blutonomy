@@ -12,7 +12,7 @@ int main(int argc, char **argv)
     // std::thread t() -ADD program to run thread
     std::thread t(&Vehicle::test, vehicle); //example
 
-    ros::spinOnce(); //Might need to make just spin
+    ros::spin();
 
     ros::shutdown();
     t.join();
