@@ -16,8 +16,7 @@
     <arg name="wamv_locked" default="false" />
     <!-- Start paused? -->
     <arg name="paused" default="false" />
-    <!-- Acoustic pinger position(s) -->
-    <arg name="pinger_params" default="$(find vrx_gazebo)/config/pinger.yaml" />
+
 
     <!-- Initial USV location and attitude-->
     <arg name="x" default="158" />
@@ -45,9 +44,6 @@
     <arg name="imu_enabled" default="false" />
     <arg name="lidar_enabled" default="false" />
     <arg name="ground_truth_enabled" default="false" />
-
-    <!-- Do we load the VRX sensor suite? -->
-    <arg name="vrx_sensors_enabled" default="true" />
 
     <!-- Start Gazebo with the world file -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
