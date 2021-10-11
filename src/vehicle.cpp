@@ -27,11 +27,15 @@ void Vehicle::test()
 
 void Vehicle::control()
 {
+    lat_thrust_.data = 1;
+
     l_thrust_.data = 1;
     r_thrust_.data = 1;
 
-    l_thrust_angle_.data = 0.01;
-    r_thrust_angle_.data = 0.01;
+    l_thrust_angle_.data = 0.1;
+    r_thrust_angle_.data = 0.1;
+    double increment;
+    double increment2 = 0.1;
 
     // float test = r_thrust_.data - l_thrust_.data;
 
@@ -41,9 +45,21 @@ void Vehicle::control()
     {
         // test = test / (test * 1.1);
 
-        std::cout << "test" << std::endl;
+        std::cout << l_thrust_angle_.data << std::endl;
 
-        // lateral_thrust_.publish(msg);
+        // increment2 = (increment2)*inc/1.001;
+        // increment = increment2 - 0.1;
+
+        l_thrust_angle_.data = l_thrust_angle_.data * (1 - (0.001 * l_thrust_angle_.data / 0.1)); // calculates current thrut angle as percentage of starting thrust angle, then calculates 0.001 (0.1%) of it. Therefore next thrust angle is 1- 0.001 = 99.9 percent of the previous.
+        r_thrust_angle_.data = r_thrust_angle_.data * (1 - (0.001 * r_thrust_angle_.data / 0.1));
+
+        // l_thrust_angle_.data = l_thrust_angle_.data - 0.0001;
+        // r_thrust_angle_.data = r_thrust_angle_.data - 0.0001;
+
+        // // l_thrust_angle_.data = l_thrust_angle_.data - 0.001;
+        // // r_thrust_angle_.data = r_thrust_angle_.data - 0.001;
+
+        lateral_thrust_.publish(lat_thrust_);
         // lateral_thrust_angle_.publish(msg);
 
         left_thrust_.publish(l_thrust_);
