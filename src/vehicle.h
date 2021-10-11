@@ -38,9 +38,11 @@ private:
     ros::Publisher right_thrust_;
     ros::Publisher right_thrust_angle_;
 
+    std_msgs::Float32 lat_thrust_;
     std_msgs::Float32 l_thrust_;
     std_msgs::Float32 r_thrust_;
 
+    std_msgs::Float32 lat_thrust_angle_;
     std_msgs::Float32 l_thrust_angle_;
     std_msgs::Float32 r_thrust_angle_;
 
