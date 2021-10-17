@@ -15,26 +15,22 @@ Vehicle::Vehicle(ros::NodeHandle nh) : nh_(nh)
     acknowledgement_ = nh_.advertise<std_msgs::Int64>("/acknowledgement", 1);
 
     //Subscribers
-    data_packet_sub_ = nh_.subscribe("chatter", 1, dataPacketCallback);    //change topic name need to add, this------------------------
-    vehicle_A_GPS_sub_ = nh_.subscribe("chatter", 1, vehicleAGPSCallback); //change topic name need to add, this------------------------
-    vehicle_B_GPS_sub_ = nh_.subscribe("chatter", 1, vehicleBGPSCallback); //change topic name need to add, this------------------------
+    // data_packet_sub_ = nh_.subscribe("/chatter", 1, &Vehicle::dataPacketCallback, this);    //Change topic need to add, this------------------------
+    vehicle_A_GPS_sub_ = nh_.subscribe("/wamv/sensors/gps/gps/fix", 1, &Vehicle::vehicleAGPSCallback, this);
+    vehicle_B_GPS_sub_ = nh_.subscribe("/wamv2/sensors/gps/gps/fix", 1, &Vehicle::vehicleBGPSCallback, this);
 
     l_thrust_.data = 0;
     r_thrust_.data = 0;
 }
 
-void Vehicle::vehicleAGPSCallback()
+void Vehicle::vehicleAGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg)
 {
-    //retreive message.data
-
-    vehicle_A_GPS_ = {0, 1}; //[longitude, latitude] change to message.data[0] etc
+    vehicle_A_GPS_ = {msg->longitude, msg->lattitude};
 }
 
-void Vehicle::vehicleBGPSCallback()
+void Vehicle::vehicleBGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg)
 {
-    //retreive message.data
-
-    vehicle_B_GPS_ = {0, 1}; //[longitude, latitude] change to message.data[0] etc
+    vehicle_B_GPS_ = {msg->longitude, msg->lattitude};
 }
 
 double Vehicle::rangeCalc()
