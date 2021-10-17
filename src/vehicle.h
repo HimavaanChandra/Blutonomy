@@ -11,6 +11,7 @@
 #include "tf/transform_datatypes.h"
 
 #include "sensor_msgs/LaserScan.h"
+#include "sensor_msgs/NavSatFix.h"
 #include "nav_msgs/Odometry.h"
 
 #include "geometry_msgs/Pose2D.h"
@@ -73,8 +74,8 @@ private:
     void control(void);
     double rangeCalc(void);
     void dataPacketCallback(void); // change to "this" PMS style
-    void vehicleAGPSCallback(void); // change to "this" PMS style
-    void vehicleBGPSCallback(void); // change to "this" PMS style
+    void vehicleAGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg);
+    void vehicleBGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg);
     void acknowledgement(void);
     void localisation(void);
     std::vector<double> explorationVehicleVector(void);
