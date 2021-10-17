@@ -196,16 +196,29 @@ void Vehicle::localisation(void)
     {
 
         // explore_vector = movement_vector.at(i);
-    // net_vector = explore_vector - investigation_vector;
-        net_vector = movement_vector.at(i);;
+        // net_vector = explore_vector - investigation_vector;
+        net_vector = movement_vector.at(i);
         net_vector_mag = sqrt(pow(net_vector.at(0), 2), pow(net_vector.at(1), 2), pow(net_vector.at(2), 2));
 
         d1 = range_circles.(i);
         d2 = range_circles.(i+1);
     
-        solutions.pushback(vectorLocalisation(net_vector_mag,d1,d2));
+        solutions.at(i) = vectorLocalisation(net_vector_mag,d1,d2));
+       
 
-    }    
+    }
+
+    for (int j = 0; j<1; j++)
+        {
+           difference = solutions
+        diffs(i,j) = norm((A1(i,:) + A1_A2) - A2(j,:))
+
+        }    
+
+
+    
+
+
 
     
     

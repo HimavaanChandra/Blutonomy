@@ -68,6 +68,7 @@ private:
     double vehicle_B_GPS_[2];
     std::vector<std::vector<double>> vehicle_A_coords;
     std::vector<std::vector<double>> solutions;
+    std::vector<std::vector<double>> difference;
 
     void control(void);
     double rangeCalc(void);
