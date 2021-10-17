@@ -33,7 +33,7 @@ void Vehicle::vehicleBGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg)
     vehicle_B_GPS_ = {msg->longitude, msg->lattitude};
 }
 
-double Vehicle::rangeCalc()
+double Vehicle::rangeCalc(void)
 {
     double range = std::sqrt(std::pow(vehicle_A_GPS_[0] - vehicle_B_GPS_[0], 2) + std::pow(vehicle_A_GPS_[1] - vehicle_B_GPS_[1], 2));
     if (data_packet_[0] >= 1)
@@ -66,7 +66,7 @@ double Vehicle::rangeCalc()
 //     return range;
 // }
 
-void Vehicle::mainFunction()
+void Vehicle::mainFunction(void)
 {
     std::cout << "initialised" << std::endl;
     control();
@@ -106,7 +106,7 @@ void Vehicle::dataPacketCallback()
     }
 }
 
-void Vehicle::acknowledgement()
+void Vehicle::acknowledgement(void)
 {
     //Change from publisher to service
 
@@ -115,11 +115,17 @@ void Vehicle::acknowledgement()
     acknowledgement_.publish(acknowledgement_data_);
 }
 
-short Vehicle::explorationVehicleVector(void)
+std::vector<double> Vehicle::explorationVehicleVector(void)
 {
-    //Vehicle A movement vector, name check
-
+    //Vehicle A movement vector, function name check
     //Get GPS at each range check
+    // std::vector<std::vector<double>> vehicle_A_coords;
+    std::vector<double> vehicle_A_coords_1 = {vehicle_A_GPS_[0], vehicle_A_GPS_[1]};
+    std::vector<double> vehicle_A_coords_2 = {vehicle_A_GPS_[0], vehicle_A_GPS_[1]};
+    std::vector<double> vehicle_A_coords_3 = {vehicle_A_GPS_[0], vehicle_A_GPS_[1]};
+
+    //2-1, 3-2
+    std::vector<double> exploration_movement_vector = {vehicle_A_coords_2.at(0) - vehicle_A_coords_1.at(0),vehicle_A_coords_2.at(1) - vehicle_A_coords_1.at(1)};
 
     //Pushback to vector
 
@@ -127,7 +133,37 @@ short Vehicle::explorationVehicleVector(void)
 
     //subtract each segment to get the vectors
 
+    //Add random tolerance to ranges - google drive - 0.1cm per second,
+    // unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
+    // std::default_random_engine generator(seed);
+    // create a uniform distribution between 0 and 10 and draw elements from it
+    // std::uniform_real_distribution<double> distribution(max_radius, 0);
+    // std::normal_distribution<double> distribution(4, 5);
+    // double elements = distribution(generator); // Generates a random double
+
+    //To implement, will need to see delta time, then multiply this buy a random value to 0.1 in seconds to both vector components
+
     return exploration_movement_vector;
+}
+
+std::vector<std::vector<double>> vectorLocalisation(net_vector_mag,d1,d2)
+{
+    double theta = acos((pow(d1, 2) + pow(net_vector_mag, 2) - pow(d2, 2)) / (2 * d1 * net_vector_mag));
+    double vector_angle = atan2(net_vector.at(1), net_vector.at(0));
+
+    net_angle_1 = theta + vector_angle;
+    net_angle_2 = -theta + vector_angle;
+
+    x1 = d1 * cos(net_angle_1);
+    y1 = d1 * sin(net_angle_1);
+    std::vector<double> solution_1 = {x1,y1};
+
+    x2 = d1 * cos(net_angle_2);
+    y2 = d1 * sin(net_angle_2);
+    std::vector<double> solution_2 = {x2,y2};
+
+    return {solution_1, solution_2};
+
 }
 
 void Vehicle::localisation(void)
@@ -152,20 +188,34 @@ void Vehicle::localisation(void)
 
     investigation_vector = 0;
 
-    // For loop
+    for (int i = 0; i<range_circle.size()-1; i++)
+    {
 
-    explore_vector = movement_vector.at(i + 1);
-    net_vector = explore_vector - investigation_vector;
+        // explore_vector = movement_vector.at(i);
+    // net_vector = explore_vector - investigation_vector;
+        net_vector = movement_vector.at(i);;
+        net_vector_mag = sqrt(pow(net_vector.at(0), 2), pow(net_vector.at(1), 2), pow(net_vector.at(2), 2));
+
+        d1 = range_circles.(i);
+        d2 = range_circles.(i+1);
+    
+        solutions.pushback(vectorLocalisation(net_vector_mag,d1,d2));
+
+    }    
+
+    
+    
+    
 
 
 
-    v = v - (b2 - b1);
-    theta = acos((d1 ^ 2 + norm(v) ^ 2 - d2 ^ 2) / (2 * d1 * norm(v)));
-    vector_angle = atan2(v(2), v(1));
-    [ x1, y1 ] = pol2cart(theta + vector_angle, d1);
-    [ x2, y2 ] = pol2cart(-theta + vector_angle, d1);
-    solution1 = [ -x1, -y1 ] + b1; % first solution for A1
-    solution2 = [-x2, -y2] + b1; % second solution for A1
+    // v = v - (b2 - b1);
+    // theta = acos((d1 ^ 2 + norm(v) ^ 2 - d2 ^ 2) / (2 * d1 * norm(v)));
+    // vector_angle = atan2(v(2), v(1));
+    // [ x1, y1 ] = pol2cart(theta + vector_angle, d1);
+    // [ x2, y2 ] = pol2cart(-theta + vector_angle, d1);
+    // solution1 = [ -x1, -y1 ] + b1; % first solution for A1
+    // solution2 = [-x2, -y2] + b1; % second solution for A1
 }
 
 void Vehicle::control()
