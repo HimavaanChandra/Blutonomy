@@ -132,7 +132,6 @@ std::vector<double> Vehicle::explorationVehicleVector(void)
         std::vector<double> exploration_movement_vector.push_back(vehicle_A_GPS_history_.at(0).at(vector_size - 1) - vehicle_A_GPS_history_.at(0).at(vector_size - 2));
     }
 
-
     //Pushback to vector
 
     //Check how many values the vector has
@@ -204,29 +203,30 @@ void Vehicle::localisation(void)
         d1 = range_circles.(i);
         d2 = range_circles.(i + 1);
 
-        solutions = vectorLocalisation(net_vector_mag,d1,d2));
-
-        for (int j = 0; j < 1; j++)
-        {
-            difference.at(i).at(j) = sqrt(pow(soultions.at(0).at(i).at(0), 2) + pow(soultions.at(0).at(i).at(1), 2)) + net_vector_mag.at(i) - sqrt(pow(soultions.at(1).at(i).at(0), 2) + pow(soultions.at(1).at(i).at(1), 2));
-        }
-
-        solutions.at(i
+        solutions.at(i) = vectorLocalisation(net_vector_mag,d1,d2));
     }
 
+    std::vector<std::vector<double>> movement_vectors;
+    movement_vectors.clear();
+
     for (int i = 0; i < range_circle.size() - 1; i++)
+    {
         for (int j = 0; j < 1; j++)
         {
             difference.at(i).at(j) = sqrt(pow(soultions.at(0).at(i).at(0), 2) + pow(soultions.at(0).at(i).at(1), 2)) + net_vector_mag.at(i) - sqrt(pow(soultions.at(1).at(i).at(0), 2) + pow(soultions.at(1).at(i).at(1), 2));
         }
 
-// v = v - (b2 - b1);
-// theta = acos((d1 ^ 2 + norm(v) ^ 2 - d2 ^ 2) / (2 * d1 * norm(v)));
-// vector_angle = atan2(v(2), v(1));
-// [ x1, y1 ] = pol2cart(theta + vector_angle, d1);
-// [ x2, y2 ] = pol2cart(-theta + vector_angle, d1);
-// solution1 = [ -x1, -y1 ] + b1; % first solution for A1
-// solution2 = [-x2, -y2] + b1; % second solution for A1
+        std::vector<int>::iterator it = std::min_element(std::begin(difference.at(i)), std::end(difference.at(i)));
+        movement_vectors.at(i) =  solutions.at(i).at(std::distance(std::begin(vec), it));
+        // std::min_element(difference.at(i).begin(), difference.at(i).end())
+    }
+    // v = v - (b2 - b1);
+    // theta = acos((d1 ^ 2 + norm(v) ^ 2 - d2 ^ 2) / (2 * d1 * norm(v)));
+    // vector_angle = atan2(v(2), v(1));
+    // [ x1, y1 ] = pol2cart(theta + vector_angle, d1);
+    // [ x2, y2 ] = pol2cart(-theta + vector_angle, d1);
+    // solution1 = [ -x1, -y1 ] + b1; % first solution for A1
+    // solution2 = [-x2, -y2] + b1; % second solution for A1
 }
 
 void Vehicle::control()
