@@ -67,6 +67,7 @@ private:
     double vehicle_A_GPS_[2];
     double vehicle_B_GPS_[2];
     std::vector<std::vector<double>> vehicle_A_coords;
+    std::vector<std::vector<double>> solutions;
 
     void control(void);
     double rangeCalc(void);
@@ -75,7 +76,8 @@ private:
     void vehicleBGPSCallback(void); // change to "this" PMS style
     void acknowledgement(void);
     void localisation(void);
-    std::vector Vehicle::explorationVehicleVector(void);
+    std::vector<double> explorationVehicleVector(void);
+    std::vector<std::vector<double>> vectorLocalisation(void)
 
     // image_transport::ImageTransport it_;
     // image_transport::Publisher image_pub_; /*!< image publisher*/
