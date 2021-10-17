@@ -65,9 +65,10 @@ private:
     ros::Subscriber data_packet_sub_;
     std::vector<short> range_circles;  
     std::vector<short> movement_vectors;
-    double vehicle_A_GPS_[2];
-    double vehicle_B_GPS_[2];
-    std::vector<std::vector<double>> vehicle_A_coords;
+    std::vector<double> vehicle_A_GPS_;
+    std::vector<double> vehicle_B_GPS_;
+    std::vector<std::vector<double>> vehicle_A_GPS_history_;
+    std::vector<std::vector<double>> vehicle_B_GPS_history_;
     std::vector<std::vector<double>> solutions;
     std::vector<std::vector<double>> difference;
 
