@@ -125,7 +125,7 @@ std::vector<double> Vehicle::explorationVehicleVector(void)
     std::vector<double> vehicle_A_coords_3 = {vehicle_A_GPS_[0], vehicle_A_GPS_[1]};
 
     //2-1, 3-2
-    std::vector<double> exploration_movement_vector = {vehicle_A_coords_2.at(0) - vehicle_A_coords_1.at(0),vehicle_A_coords_2.at(1) - vehicle_A_coords_1.at(1)};
+    std::vector<double> exploration_movement_vector = {vehicle_A_coords_2.at(0) - vehicle_A_coords_1.at(0), vehicle_A_coords_2.at(1) - vehicle_A_coords_1.at(1)};
 
     //Pushback to vector
 
@@ -146,7 +146,7 @@ std::vector<double> Vehicle::explorationVehicleVector(void)
     return exploration_movement_vector;
 }
 
-std::vector<std::vector<double>> vectorLocalisation(net_vector_mag,d1,d2)
+std::vector<std::vector<double>> vectorLocalisation(net_vector_mag, d1, d2)
 {
     double theta = acos((pow(d1, 2) + pow(net_vector_mag, 2) - pow(d2, 2)) / (2 * d1 * net_vector_mag));
     double vector_angle = atan2(net_vector.at(1), net_vector.at(0));
@@ -156,14 +156,13 @@ std::vector<std::vector<double>> vectorLocalisation(net_vector_mag,d1,d2)
 
     x1 = d1 * cos(net_angle_1);
     y1 = d1 * sin(net_angle_1);
-    std::vector<double> solution_1 = {x1,y1};
+    std::vector<double> solution_1 = {x1, y1};
 
     x2 = d1 * cos(net_angle_2);
     y2 = d1 * sin(net_angle_2);
-    std::vector<double> solution_2 = {x2,y2};
+    std::vector<double> solution_2 = {x2, y2};
 
     return {solution_1, solution_2};
-
 }
 
 void Vehicle::localisation(void)
@@ -188,47 +187,40 @@ void Vehicle::localisation(void)
 
     investigation_vector = 0;
 
-    for (int i = 0; i<range_circle.size()-1; i++)
+    for (int i = 0; i < range_circle.size() - 1; i++)
     {
 
         // explore_vector = movement_vector.at(i);
         // net_vector = explore_vector - investigation_vector;
         net_vector = movement_vector.at(i);
-        net_vector_mag = sqrt(pow(net_vector.at(0), 2), pow(net_vector.at(1), 2), pow(net_vector.at(2), 2));
+        net_vector_mag.at(i) = sqrt(pow(net_vector.at(0), 2), pow(net_vector.at(1), 2), pow(net_vector.at(2), 2));
 
         d1 = range_circles.(i);
-        d2 = range_circles.(i+1);
-    
-        solutions.at(i) = vectorLocalisation(net_vector_mag,d1,d2));
-       
+        d2 = range_circles.(i + 1);
 
+        solutions.at(i) = vectorLocalisation(net_vector_mag,d1,d2));
+
+        for (int j = 0; j < 1; j++)
+        {
+            difference.at(i).at(j) = sqrt(pow(soultions.at(0).at(i).at(0), 2) + pow(soultions.at(0).at(i).at(1), 2)) + net_vector_mag.at(i) - sqrt(pow(soultions.at(1).at(i).at(0), 2) + pow(soultions.at(1).at(i).at(1), 2));
+        }
+
+        solutions.at(i
     }
 
-    for (int j = 0; j<1; j++)
+    for (int i = 0; i < range_circle.size() - 1; i++)
+        for (int j = 0; j < 1; j++)
         {
-           difference = solutions
-        diffs(i,j) = norm((A1(i,:) + A1_A2) - A2(j,:))
+            difference.at(i).at(j) = sqrt(pow(soultions.at(0).at(i).at(0), 2) + pow(soultions.at(0).at(i).at(1), 2)) + net_vector_mag.at(i) - sqrt(pow(soultions.at(1).at(i).at(0), 2) + pow(soultions.at(1).at(i).at(1), 2));
+        }
 
-        }    
-
-
-    
-
-
-
-    
-    
-    
-
-
-
-    // v = v - (b2 - b1);
-    // theta = acos((d1 ^ 2 + norm(v) ^ 2 - d2 ^ 2) / (2 * d1 * norm(v)));
-    // vector_angle = atan2(v(2), v(1));
-    // [ x1, y1 ] = pol2cart(theta + vector_angle, d1);
-    // [ x2, y2 ] = pol2cart(-theta + vector_angle, d1);
-    // solution1 = [ -x1, -y1 ] + b1; % first solution for A1
-    // solution2 = [-x2, -y2] + b1; % second solution for A1
+// v = v - (b2 - b1);
+// theta = acos((d1 ^ 2 + norm(v) ^ 2 - d2 ^ 2) / (2 * d1 * norm(v)));
+// vector_angle = atan2(v(2), v(1));
+// [ x1, y1 ] = pol2cart(theta + vector_angle, d1);
+// [ x2, y2 ] = pol2cart(-theta + vector_angle, d1);
+// solution1 = [ -x1, -y1 ] + b1; % first solution for A1
+// solution2 = [-x2, -y2] + b1; % second solution for A1
 }
 
 void Vehicle::control()

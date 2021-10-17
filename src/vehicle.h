@@ -34,7 +34,7 @@ public:
     ros::NodeHandle nh_;
 
 private:
-//tidy up-----------------------
+    //tidy up-----------------------
     cv::Mat image_;
 
     //control
@@ -63,7 +63,7 @@ private:
     ros::Subscriber vehicle_A_GPS_sub_;
     ros::Subscriber vehicle_B_GPS_sub_;
     ros::Subscriber data_packet_sub_;
-    std::vector<short> range_circles;  
+    std::vector<short> range_circles;
     std::vector<short> movement_vectors;
     double vehicle_A_GPS_[2];
     double vehicle_B_GPS_[2];
