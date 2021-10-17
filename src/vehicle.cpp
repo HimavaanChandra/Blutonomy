@@ -91,6 +91,8 @@ void Vehicle::dataPacketCallback()
         // Vehicle A Depth
         // Vehicle A to point of interest pose: (x,y,z)
         data_packet_ = {packet_number, timestamp, speed_of_sound, depth, x, y, z};
+        vehicle_A_GPS_history_.pushback(vehicle_A_GPS_);
+        vehicle_B_GPS_history_.pushback(vehicle_B_GPS_);
         break;
     case (packet_number >= 2):
         // Data Packet
@@ -100,6 +102,8 @@ void Vehicle::dataPacketCallback()
         // Vehicle A Depth
         // Distance and direction moved since the last transmission
         data_packet_ = {packet_number, timestamp, speed_of_sound, depth, distance_moved, direction_moved};
+        vehicle_A_GPS_history_.pushback(vehicle_A_GPS_);
+        vehicle_B_GPS_history_.pushback(vehicle_B_GPS_);
         break;
     default:
         break;
@@ -118,14 +122,16 @@ void Vehicle::acknowledgement(void)
 std::vector<double> Vehicle::explorationVehicleVector(void)
 {
     //Vehicle A movement vector, function name check
-    //Get GPS at each range check
-    // std::vector<std::vector<double>> vehicle_A_coords;
-    std::vector<double> vehicle_A_coords_1 = {vehicle_A_GPS_[0], vehicle_A_GPS_[1]};
-    std::vector<double> vehicle_A_coords_2 = {vehicle_A_GPS_[0], vehicle_A_GPS_[1]};
-    std::vector<double> vehicle_A_coords_3 = {vehicle_A_GPS_[0], vehicle_A_GPS_[1]};
+    //pGet last 2 gps points
+    int vector_size = vehicle_A_GPS_history_.size();
+    if (vector_size > 1)
+    {
+        //longitude
+        std::vector<double> exploration_movement_vector.push_back(vehicle_A_GPS_history_.at(vector_size - 1).at(0) - vehicle_A_GPS_history_.at(vector_size - 2).at(0));
+        //latitude
+        std::vector<double> exploration_movement_vector.push_back(vehicle_A_GPS_history_.at(0).at(vector_size - 1) - vehicle_A_GPS_history_.at(0).at(vector_size - 2));
+    }
 
-    //2-1, 3-2
-    std::vector<double> exploration_movement_vector = {vehicle_A_coords_2.at(0) - vehicle_A_coords_1.at(0), vehicle_A_coords_2.at(1) - vehicle_A_coords_1.at(1)};
 
     //Pushback to vector
 
