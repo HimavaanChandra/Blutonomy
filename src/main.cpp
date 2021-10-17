@@ -10,7 +10,7 @@ int main(int argc, char **argv)
 
     std::shared_ptr<Vehicle> vehicle(new Vehicle(nh));
     // std::thread t() -ADD program to run thread
-    std::thread t(&Vehicle::test, vehicle); //example
+    std::thread t(&Vehicle::mainFunction, vehicle); //example
 
     ros::spin();
 

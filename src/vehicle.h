@@ -6,6 +6,8 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "std_msgs/Float32.h"
+#include "std_msgs/Int64.h"
+
 #include "tf/transform_datatypes.h"
 
 #include "sensor_msgs/LaserScan.h"
@@ -18,17 +20,23 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 
+#include <chrono>
+#include <random>
+#include <thread>
+
 class Vehicle
 {
 public:
     Vehicle(ros::NodeHandle nh);
     ~Vehicle();
-    void test(void); //Delete
+    void mainFunction(void); //Delete
     ros::NodeHandle nh_;
 
 private:
-    cv::Mat image_; //Camera image
+//tidy up-----------------------
+    cv::Mat image_;
 
+    //control
     ros::Publisher lateral_thrust_;
     ros::Publisher lateral_thrust_angle_;
 
@@ -46,7 +54,29 @@ private:
     std_msgs::Float32 l_thrust_angle_;
     std_msgs::Float32 r_thrust_angle_;
 
+    double speed_of_sound_; //maybe change over time
+    std::vector<short> data_packet_;
+
+    ros::Publisher acknowledgement_;
+    std_msgs::Int64 acknowledgement_data_;
+    ros::Subscriber vehicle_A_GPS_sub_;
+    ros::Subscriber vehicle_B_GPS_sub_;
+    ros::Subscriber data_packet_sub_;
+    std::vector<short> range_circles;  
+    std::vector<short> movement_vectors;
+    double vehicle_A_GPS_[2];
+    double vehicle_B_GPS_[2];
+    std::vector<std::vector<double>> vehicle_A_coords;
+
     void control(void);
+    double rangeCalc(void);
+    void dataPacketCallback(void); // change to "this" PMS style
+    void vehicleAGPSCallback(void); // change to "this" PMS style
+    void vehicleBGPSCallback(void); // change to "this" PMS style
+    void acknowledgement(void);
+    void localisation(void);
+    std::vector Vehicle::explorationVehicleVector(void);
+
     // image_transport::ImageTransport it_;
     // image_transport::Publisher image_pub_; /*!< image publisher*/
 
