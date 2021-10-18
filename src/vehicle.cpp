@@ -178,71 +178,76 @@ std::vector<std::vector<double>> Vehicle::vectorLocalisation(std::vector<double>
 void Vehicle::localisation(void)
 {
     //Might need to check/wait for next data packet before localising
+
+    int number_of_distance_circles = 3;
+    
+    solutions.clear();
+    net_vector.clear();
+
+    // Add the most recent distance circle
     range_circles.push_back(rangeCalc());
+
+    // Add the most recent movement vector
     movement_vectors.push_back(explorationVehicleVector());
 
-    // Ensure only 3 range circles are used
-    if (range_circles.size() > 3)
-    {
-        range_circles.erase(range_circles.begin());
-        // net_vector_mag.erase(net_vector_mag.begin());
-        solutions.erase(solutions.begin());
-    }
-
-    // Movement vectors in between each range circles
-    if (movement_vectors.size() > 2)
+    if (movement_vectors.size() > number_of_distance_circles - 1)
     {
         movement_vectors.erase(movement_vectors.begin());
     }
 
-    // [A11, A12] = vectorInCircles(movement vector of A, distance from investigate vehicle to range circle 1 , B1_true, D2, B2_true)
-
-    // investigation_vector = 0;
-
-    for (int i = 0; i < range_circles.size() - 1; i++)
+    // Localise when 3 range circles and remove the oldest range circle if more than 3 availble
+    if (range_circles.size() > number_of_distance_circles)
     {
+        range_circles.erase(range_circles.begin());
+        solutions.erase(solutions.begin());
 
-        // explore_vector = movement_vector.at(i);
-        // net_vector = explore_vector - investigation_vector;
-        net_vector.push_back(movement_vectors.at(i));
-        // net_vector_mag.push_back(sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2)/*, pow(net_vector.at(2), 2)*/));
-
-        double d1 = range_circles.at(i);
-        double d2 = range_circles.at(i + 1);
-
-        solutions.push_back(vectorLocalisation(net_vector, d1, d2));
-    }
-
-    // std::vector<std::vector<double>> movement_vectors;
-    // movement_vectors.clear();
-
-    double lowest_difference = 0;
-    std::vector<double> lowest_index = {0,0};
-
-    for (int i = 0; i < range_circles.size() - 1; i++)
-    {
-        for (int j = 0; j < 1; j++)
+        for (int i = 0; i < number_of_distance_circles - 2; i++)
         {
 
-            // diffs(i,j) = norm((A1(i,:) + A1_A2) - A2(j,:))
-            std::vector<double> vector_x = solutions.at(0).at(i).at(0) + solutions.at(1).at(j).at(0) + net_vector.at(0);
-            std::vector<double> vector_y = solutions.at(0).at(i).at(1) + solutions.at(1).at(j).at(1) + net_vector.at(1);
+            // explore_vector = movement_vector.at(i);
+            // net_vector = explore_vector - investigation_vector;
 
-            difference = sqrt(pow(vector_x,2)+pow(vector_y,2));
-            
+            //  Net vector combin vehicle A and B movement vectors
+            net_vector.push_back(movement_vectors.at(i));
+            // net_vector_mag.push_back(sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2)/*, pow(net_vector.at(2), 2)*/));
 
-            if (difference<lowest_difference || lowest_difference = 0)
-            {
-                    lowest_difference = difference;
-                    lowest_index = {i,j};
-            }
+            // Radius from vehilce B to Vehicle A circles 1 and 2
+            double d1 = range_circles.at(i);
+            double d2 = range_circles.at(i + 1);
 
+            // Push back solution 1 and 2 for each movement vector localisation. solutions .at(circle vector 1 or 2) .at(solution 1 or 2) . at(x or y)
+            solutions.push_back(vectorLocalisation(net_vector, d1, d2));
         }
 
-    }
+        double lowest_difference = 0;
+        std::vector<double> lowest_index = {0, 0};
 
-    std::vector <double> solution = solutions.at(lowest_index(0)).at(lowest_index(1));
-    net_vector.clear();
+        for (int i = 0; i < number_of_distance_circles - 2; i++)
+        {
+            for (int j = 0; j < 1; j++)
+            {
+
+                // diffs(i,j) = norm((A1(i,:) + A1_A2) - A2(j,:))
+                // Solutions .at(circle vector 1 or 2) .at(solution 1 or 2) . at(x or y)
+                std::vector<double> vector_x = solutions.at(0).at(i).at(0) - solutions.at(1).at(j).at(0) + net_vector.at(0);
+                std::vector<double> vector_y = solutions.at(0).at(i).at(1) - solutions.at(1).at(j).at(1) + net_vector.at(1);
+
+                difference = sqrt(pow(vector_x, 2) + pow(vector_y, 2));
+
+                if (difference < lowest_difference || lowest_difference = 0)
+                {
+                    lowest_difference = difference;
+                    lowest_index = {i, j};
+                }
+            }
+        }
+
+        std::vector<double> solution1 = solutions.at(0).at(lowest_index(i));
+        std::vector<double> solution2 = solutions.at(1).at(lowest_index(j));
+
+        std::vector<double> resultant = {solution1.at(0) + solution2.at(0), solution1.at(1) + solution2.at(1)};
+
+    }
     // v = v - (b2 - b1);
     // theta = acos((d1 ^ 2 + norm(v) ^ 2 - d2 ^ 2) / (2 * d1 * norm(v)));
     // vector_angle = atan2(v(2), v(1));
