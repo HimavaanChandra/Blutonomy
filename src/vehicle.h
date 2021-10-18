@@ -56,7 +56,7 @@ private:
     std_msgs::Float32 r_thrust_angle_;
 
     double speed_of_sound_; //maybe change over time
-    std::vector<short> data_packet_;
+    std::vector<float> data_packet_;
 
     ros::Publisher acknowledgement_;
     std_msgs::Int64 acknowledgement_data_;
@@ -82,7 +82,7 @@ private:
     void acknowledgement(void);
     void localisation(void);
     std::vector<double> explorationVehicleVector(void);
-    std::vector<std::vector<double>> vectorLocalisation(double net_vector_mag, double d1, double d2);
+    std::vector<std::vector<double>> vectorLocalisation(std::vector<double> net_vector, double d1, double d2);
 
     // image_transport::ImageTransport it_;
     // image_transport::Publisher image_pub_; /*!< image publisher*/

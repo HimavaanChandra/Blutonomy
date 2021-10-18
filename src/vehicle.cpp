@@ -47,6 +47,7 @@ double Vehicle::rangeCalc(void)
     double time_delta = range / speed_of_sound_;
     int int_time = time_delta*1000;
     std::this_thread::sleep_for(std::chrono::milliseconds(int_time));
+    std::cout << "Range: " << range << "Time: " << time_delta << std::endl;
     return range;
 }
 
@@ -63,7 +64,7 @@ double Vehicle::rangeCalc(void)
 
 //     short timenow = std::chrono::system_clock::now().time_since_epoch().count();
 //     short delta_time = std::abs(timenow - data_packet_time);
-//     short range = speed_of_sound_ * delta_time;
+//     short range = speed_of_sound_ * delta_time;-
 //     return range;
 // }
 
@@ -77,7 +78,7 @@ void Vehicle::dataPacketCallback()
 {
     data_packet_.clear();
     //Will need to add rosmsg link message here/ save the message
-    short packet_number, x, y, z, timestamp, speed_of_sound, depth, distance_moved, direction_moved;
+    float packet_number, x, y, z, timestamp, speed_of_sound, depth, distance_moved, direction_moved;
     
     if (packet_number == 0)
     {
@@ -151,11 +152,15 @@ std::vector<double> Vehicle::explorationVehicleVector(void)
     return exploration_movement_vector;
 }
 
-std::vector<std::vector<double>> Vehicle::vectorLocalisation(double net_vector_mag, double d1, double d2)
+std::vector<std::vector<double>> Vehicle::vectorLocalisation(std::vector<double> net_vector, double d1, double d2)
 {
+    
+    double net_vector_mag = sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2)/*, pow(net_vector.at(2), 2)*/);
+    
+    
     double theta = acos((pow(d1, 2) + pow(net_vector_mag, 2) - pow(d2, 2)) / (2 * d1 * net_vector_mag));
-    // double vector_angle = atan2(net_vector.at(1), net_vector.at(0));
-    double vector_angle = 30;
+    double vector_angle = atan2(net_vector.at(1), net_vector.at(0));
+    // double vector_angle = 30;
 
 
     double net_angle_1 = theta + vector_angle;
@@ -182,7 +187,7 @@ void Vehicle::localisation(void)
     if (range_circles.size() > 3)
     {
         range_circles.erase(range_circles.begin());
-        net_vector_mag.erase(net_vector_mag.begin());
+        // net_vector_mag.erase(net_vector_mag.begin());
         solutions.erase(solutions.begin());
 
     }
@@ -208,7 +213,7 @@ void Vehicle::localisation(void)
         double d1 = range_circles.at(i);
         double d2 = range_circles.at(i + 1);
 
-        solutions.push_back(vectorLocalisation(net_vector_mag.back(),d1,d2));
+        solutions.push_back(vectorLocalisation(net_vector,d1,d2));
     }
 
     std::vector<std::vector<double>> movement_vectors;
