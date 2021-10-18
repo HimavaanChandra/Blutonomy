@@ -55,8 +55,9 @@ private:
     std_msgs::Float32 l_thrust_angle_;
     std_msgs::Float32 r_thrust_angle_;
 
-    double speed_of_sound_; //maybe change over time
+    const int speed_of_sound_ = 1500; //maybe change over time
     std::vector<float> data_packet_;
+    int packet_number_;
 
     ros::Publisher acknowledgement_;
     std_msgs::Int64 acknowledgement_data_;
@@ -73,14 +74,19 @@ private:
     std::vector<std::vector<double>> vehicle_B_GPS_history_;
     std::vector<std::vector<std::vector<double>>> solutions;
     std::vector<std::vector<double>> difference;
+    std::vector<double> resultant_;
+    bool localised_;
+
 
     void control(void);
-    double rangeCalc(void);
+    double rangeCalc(double);
+    double simulateRange(void);
     void dataPacketCallback(void); // change to "this" PMS style
     void vehicleAGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg);
     void vehicleBGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg);
     void acknowledgement(void);
     void localisation(void);
+    void publishDataPacket(void);
     std::vector<double> explorationVehicleVector(void);
     std::vector<std::vector<double>> vectorLocalisation(std::vector<double> net_vector, double d1, double d2);
 

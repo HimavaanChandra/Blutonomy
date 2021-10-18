@@ -9,13 +9,14 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
 
     std::shared_ptr<Vehicle> vehicle(new Vehicle(nh));
-    // std::thread t() -ADD program to run thread
-    std::thread t(&Vehicle::mainFunction, vehicle); //example
+    std::thread t(&Vehicle::control, vehicle);
+    std::thread t2(&Vehicle::mainFunction, vehicle);
 
     ros::spin();
 
     ros::shutdown();
     t.join();
+    t2.join();
 
     return 0;
 }

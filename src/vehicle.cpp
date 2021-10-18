@@ -21,16 +21,18 @@ Vehicle::Vehicle(ros::NodeHandle nh) : nh_(nh)
 
     l_thrust_.data = 0;
     r_thrust_.data = 0;
+    packet_number_ = 0;
+    localised_ = false;
 }
 
 void Vehicle::vehicleAGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg)
 {
-    vehicle_A_GPS_ = {msg->longitude, msg->latitude};
+    vehicle_A_GPS_ = {msg->latitude, msg->longitude};
 }
 
 void Vehicle::vehicleBGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg)
 {
-    vehicle_B_GPS_ = {msg->longitude, msg->latitude};
+    vehicle_B_GPS_ = {msg->latitude, msg->longitude};
 }
 
 double Vehicle::rangeCalc(void)
@@ -51,43 +53,23 @@ double Vehicle::rangeCalc(void)
     return range;
 }
 
-// short Vehicle::oldRangeCalc()
-// {
-//     short data_packet_time = 0;
-//     short speed_of_sound_ = 0;
-
-//     if (data_packet_[0] >= 1)
-//     {
-//         data_packet_time = data_packet_[1];
-//         speed_of_sound_ = data_packet_[2];
-//     }
-
-//     short timenow = std::chrono::system_clock::now().time_since_epoch().count();
-//     short delta_time = std::abs(timenow - data_packet_time);
-//     short range = speed_of_sound_ * delta_time;-
-//     return range;
-// }
-
 void Vehicle::mainFunction(void)
 {
-    std::cout << "initialised" << std::endl;
-    control();
+    std::cout << "Program Start" << std::endl;
 
-    // Start spiral pattern
+    // Spiral pattern is running in separate thread
 
     // Wait a certain (possibly random) amount of time before finding point of interest
+    int point_of_interest_delay = 10;
+    std::this_thread::sleep_for(std::chrono::seconds(point_of_interest_delay));
+    int transmission_delay = 60;
 
-    // Send first range circle
-
-    // Wait 1-2 mins
-
-    // Send second range circle
-
-    // Perform first localisation calc
-
-    // wait 1-2 mins
-
-    // Perform second localisation calc
+    while (!localised_)
+    {
+        localisation();
+        // Wait 1 minute
+        std::this_thread::sleep_for(std::chrono::seconds(transmission_delay));
+    }
 
     // Calculate position of vehicle A
 
@@ -95,6 +77,72 @@ void Vehicle::mainFunction(void)
 
     // Drive vehicle B to point
 
+    std::vector<double> goal = {resultant_.at(0) + vehicle_B_GPS_.at(0), resultant_.at(1) + vehicle_B_GPS_.at(1)};
+
+    std::vector<double> distance_to_goal;
+    double distance_to_goal_mag = 1;
+
+    while (distance_to_goal_mag > 0.0001)
+    {
+        distance_to_goal = {goal.at(0) - vehicle_B_GPS_.at(0), goal.at(1) - vehicle_B_GPS_.at(1)};
+        distance_to_goal_mag = sqrt(pow(distance_to_goal.at(0), 2) + pow(distance_to_goal.at(1), 2);
+        purePursuit(distance_to_goal.at(0), distance_to_goal_mag);
+    }
+
+    std::cout << "Program Completed" << std::endl;
+}
+
+double Vehicle::simulateRange(void)
+{
+    double time_now = std::chrono::system_clock::now().time_since_epoch().count();
+    double range = std::sqrt(std::pow(vehicle_A_GPS_[0] - vehicle_B_GPS_[0], 2) + std::pow(vehicle_A_GPS_[1] - vehicle_B_GPS_[1], 2));
+    double time_delta = range / speed_of_sound_;
+    int int_time = time_delta * 1000;
+    std::this_thread::sleep_for(std::chrono::milliseconds(int_time));
+    std::cout << "Range: " << range << "Time: " << time_delta << std::endl;
+    return time_now;
+}
+
+double Vehicle::rangeCalc(double time_sent)
+{
+    double time_now = std::chrono::system_clock::now().time_since_epoch().count();
+    double delta_time = time_now - time_sent;
+    short range = speed_of_sound_ * delta_time;
+    return range;
+}
+
+void Vehicle::publishDataPacket()
+{
+    //Vehicle A to point of interest coords
+    float POI_lattitude = 0;
+    float POI_longitude = 0;
+    float z = 0;
+    //Vehicle A movement vector
+    float A_latitude_moved = 0;
+    float A_longitude_moved = 0;
+
+    //Run range function here then send delay and speed of sound?
+    float timestamp = simulateRange();
+    float depth = 0; //since on surface
+
+    std::vector<float> data_packet = {0};
+
+    if (packet_number_ == 0)
+    {
+        packet_number_++;
+        data_packet = {packet_number_, timestamp, speed_of_sound_, depth, POI_lattitude, POI_longitude, z};
+    }
+    else if (packet_number_ >= 1)
+    {
+        packet_number_++;
+        data_packet = {packet_number_, timestamp, speed_of_sound_, depth, A_latitude_moved, A_longitude_moved};
+    }
+
+    //ros publish datapacket
+    //Simulate timings
+
+    // data_packet_ = {packet_number, timestamp, speed_of_sound, depth, x, y, z};
+    // data_packet_ = {packet_number, timestamp, speed_of_sound, depth, distance_moved, direction_moved};
 }
 
 void Vehicle::dataPacketCallback()
@@ -203,12 +251,12 @@ void Vehicle::localisation(void)
     //Might need to check/wait for next data packet before localising
 
     int number_of_distance_circles = 3;
-    
+
     solutions.clear();
     net_vector.clear();
 
     // Add the most recent distance circle
-    range_circles.push_back(rangeCalc());
+    range_circles.push_back(rangeCalc(data_packet.at(1)));
 
     // Add the most recent movement vector
     movement_vectors.push_back(explorationVehicleVector());
@@ -268,8 +316,9 @@ void Vehicle::localisation(void)
         std::vector<double> solution1 = solutions.at(0).at(lowest_index(i));
         std::vector<double> solution2 = solutions.at(1).at(lowest_index(j));
 
-        std::vector<double> resultant = {solution1.at(0) + solution2.at(0), solution1.at(1) + solution2.at(1)};
+        resultant_ = {solution1.at(0) + solution2.at(0), solution1.at(1) + solution2.at(1)};
 
+        localised_ = true;
     }
     // v = v - (b2 - b1);
     // theta = acos((d1 ^ 2 + norm(v) ^ 2 - d2 ^ 2) / (2 * d1 * norm(v)));
@@ -278,6 +327,49 @@ void Vehicle::localisation(void)
     // [ x2, y2 ] = pol2cart(-theta + vector_angle, d1);
     // solution1 = [ -x1, -y1 ] + b1; % first solution for A1
     // solution2 = [-x2, -y2] + b1; % second solution for A1
+}
+
+// centrDistance = latitude    Range = magnitude
+void Vehicle::purePursuit(double centreDistance, double range)
+{
+    // Calculating maximum angular velocity for velocity control
+    double gamma = (2 * std::sin(centreDistance)) / std::pow(range, 2);
+    double linear_velocity = 0.22;
+    //   double angular_velocity = linear_velocity * gamma * 5;
+    //   if (gamma < 0)
+    //   {
+    //     if (angular_velocity < 0)
+    //     {
+    //       angular_velocity = -angular_velocity;
+    //     }
+    //   }
+    //   else
+    //   {
+    //     if (angular_velocity > 0)
+    //     {
+    //       angular_velocity = -angular_velocity;
+    //     }
+    //   }
+
+    if (linear_velocity > 1)
+    {
+        linear_velocity = 1;
+    }
+
+    while (linear_velocity > 1 || angular_velocity > 1)
+    {
+        // angular_velocity *= 0.99;
+        linear_velocity *= 0.99;
+    }
+
+    left_thrust_.publish(linear_velocity);
+    left_thrust_angle_.publish(gamma);
+
+    right_thrust_.publish(linear_velocity);
+    right_thrust_angle_.publish(gamma);
+
+    // robot_.twist_.linear.x = linear_velocity;
+    // robot_.twist_.angular.z = angular_velocity;
 }
 
 void Vehicle::control()
