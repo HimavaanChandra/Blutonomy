@@ -25,12 +25,12 @@ Vehicle::Vehicle(ros::NodeHandle nh) : nh_(nh)
 
 void Vehicle::vehicleAGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg)
 {
-    vehicle_A_GPS_ = {msg->longitude, msg->lattitude};
+    vehicle_A_GPS_ = {msg->longitude, msg->latitude};
 }
 
 void Vehicle::vehicleBGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg)
 {
-    vehicle_B_GPS_ = {msg->longitude, msg->lattitude};
+    vehicle_B_GPS_ = {msg->longitude, msg->latitude};
 }
 
 double Vehicle::rangeCalc(void)
@@ -45,7 +45,8 @@ double Vehicle::rangeCalc(void)
         speed_of_sound_ = 0;
     }
     double time_delta = range / speed_of_sound_;
-    std::this_thread::sleep_for(std::chrono::milliseconds(time_delta * 1000));
+    int int_time = time_delta*1000;
+    std::this_thread::sleep_for(std::chrono::milliseconds(int_time));
     return range;
 }
 
@@ -77,13 +78,13 @@ void Vehicle::dataPacketCallback()
     data_packet_.clear();
     //Will need to add rosmsg link message here/ save the message
     short packet_number, x, y, z, timestamp, speed_of_sound, depth, distance_moved, direction_moved;
-
-    switch (packet_number)
+    
+    if (packet_number == 0)
     {
-    case 0:
         data_packet_ = {0};
-        break;
-    case 1:
+    }
+    else if (packet_number == 1)
+    {
         // 1st Data Packet
         // Packet number
         // Timestamp
@@ -91,10 +92,11 @@ void Vehicle::dataPacketCallback()
         // Vehicle A Depth
         // Vehicle A to point of interest pose: (x,y,z)
         data_packet_ = {packet_number, timestamp, speed_of_sound, depth, x, y, z};
-        vehicle_A_GPS_history_.pushback(vehicle_A_GPS_);
-        vehicle_B_GPS_history_.pushback(vehicle_B_GPS_);
-        break;
-    case (packet_number >= 2):
+        vehicle_A_GPS_history_.push_back(vehicle_A_GPS_);
+        vehicle_B_GPS_history_.push_back(vehicle_B_GPS_);
+    }
+    else if (packet_number >= 2)
+    {
         // Data Packet
         // Packet number
         // Timestamp
@@ -102,11 +104,8 @@ void Vehicle::dataPacketCallback()
         // Vehicle A Depth
         // Distance and direction moved since the last transmission
         data_packet_ = {packet_number, timestamp, speed_of_sound, depth, distance_moved, direction_moved};
-        vehicle_A_GPS_history_.pushback(vehicle_A_GPS_);
-        vehicle_B_GPS_history_.pushback(vehicle_B_GPS_);
-        break;
-    default:
-        break;
+        vehicle_A_GPS_history_.push_back(vehicle_A_GPS_);
+        vehicle_B_GPS_history_.push_back(vehicle_B_GPS_);
     }
 }
 
@@ -124,12 +123,13 @@ std::vector<double> Vehicle::explorationVehicleVector(void)
     //Vehicle A movement vector, function name check
     //pGet last 2 gps points
     int vector_size = vehicle_A_GPS_history_.size();
+    std::vector<double> exploration_movement_vector;
     if (vector_size > 1)
     {
         //longitude
-        std::vector<double> exploration_movement_vector.push_back(vehicle_A_GPS_history_.at(vector_size - 1).at(0) - vehicle_A_GPS_history_.at(vector_size - 2).at(0));
+        exploration_movement_vector.push_back(vehicle_A_GPS_history_.at(vector_size - 1).at(0) - vehicle_A_GPS_history_.at(vector_size - 2).at(0));
         //latitude
-        std::vector<double> exploration_movement_vector.push_back(vehicle_A_GPS_history_.at(0).at(vector_size - 1) - vehicle_A_GPS_history_.at(0).at(vector_size - 2));
+        exploration_movement_vector.push_back(vehicle_A_GPS_history_.at(0).at(vector_size - 1) - vehicle_A_GPS_history_.at(0).at(vector_size - 2));
     }
 
     //Pushback to vector
@@ -151,20 +151,22 @@ std::vector<double> Vehicle::explorationVehicleVector(void)
     return exploration_movement_vector;
 }
 
-std::vector<std::vector<double>> vectorLocalisation(net_vector_mag, d1, d2)
+std::vector<std::vector<double>> Vehicle::vectorLocalisation(double net_vector_mag, double d1, double d2)
 {
     double theta = acos((pow(d1, 2) + pow(net_vector_mag, 2) - pow(d2, 2)) / (2 * d1 * net_vector_mag));
-    double vector_angle = atan2(net_vector.at(1), net_vector.at(0));
+    // double vector_angle = atan2(net_vector.at(1), net_vector.at(0));
+    double vector_angle = 30;
 
-    net_angle_1 = theta + vector_angle;
-    net_angle_2 = -theta + vector_angle;
 
-    x1 = d1 * cos(net_angle_1);
-    y1 = d1 * sin(net_angle_1);
+    double net_angle_1 = theta + vector_angle;
+    double net_angle_2 = -theta + vector_angle;
+
+    double x1 = d1 * cos(net_angle_1);
+    double y1 = d1 * sin(net_angle_1);
     std::vector<double> solution_1 = {x1, y1};
-
-    x2 = d1 * cos(net_angle_2);
-    y2 = d1 * sin(net_angle_2);
+ 
+    double x2 = d1 * cos(net_angle_2);
+    double y2 = d1 * sin(net_angle_2);
     std::vector<double> solution_2 = {x2, y2};
 
     return {solution_1, solution_2};
@@ -173,51 +175,55 @@ std::vector<std::vector<double>> vectorLocalisation(net_vector_mag, d1, d2)
 void Vehicle::localisation(void)
 {
     //Might need to check/wait for next data packet before localising
-    range_circles.pushback(rangeCalc());
-    movement_vectors.pushback(explorationVehicleVector());
+    range_circles.push_back(rangeCalc());
+    movement_vectors.push_back(explorationVehicleVector());
 
     // Ensure only 3 range circles are used
     if (range_circles.size() > 3)
     {
         range_circles.erase(range_circles.begin());
+        net_vector_mag.erase(net_vector_mag.begin());
+        solutions.erase(solutions.begin());
+
     }
 
     // Movement vectors in between each range circles
     if (movement_vectors.size() > 2)
     {
-        movement_vectors.erase(range_circles.begin());
+        movement_vectors.erase(movement_vectors.begin());
     }
 
     // [A11, A12] = vectorInCircles(movement vector of A, distance from investigate vehicle to range circle 1 , B1_true, D2, B2_true)
 
-    investigation_vector = 0;
+    // investigation_vector = 0;
 
-    for (int i = 0; i < range_circle.size() - 1; i++)
+    for (int i = 0; i < range_circles.size() - 1; i++)
     {
 
         // explore_vector = movement_vector.at(i);
         // net_vector = explore_vector - investigation_vector;
-        net_vector = movement_vector.at(i);
-        net_vector_mag.at(i) = sqrt(pow(net_vector.at(0), 2), pow(net_vector.at(1), 2), pow(net_vector.at(2), 2));
+        net_vector = movement_vectors.at(i);
+        net_vector_mag.push_back(sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2)/*, pow(net_vector.at(2), 2)*/));
 
-        d1 = range_circles.(i);
-        d2 = range_circles.(i + 1);
+        double d1 = range_circles.at(i);
+        double d2 = range_circles.at(i + 1);
 
-        solutions.at(i) = vectorLocalisation(net_vector_mag,d1,d2));
+        solutions.push_back(vectorLocalisation(net_vector_mag.back(),d1,d2));
     }
 
     std::vector<std::vector<double>> movement_vectors;
     movement_vectors.clear();
 
-    for (int i = 0; i < range_circle.size() - 1; i++)
+    for (int i = 0; i < range_circles.size() - 1; i++)
     {
         for (int j = 0; j < 1; j++)
         {
-            difference.at(i).at(j) = sqrt(pow(soultions.at(0).at(i).at(0), 2) + pow(soultions.at(0).at(i).at(1), 2)) + net_vector_mag.at(i) - sqrt(pow(soultions.at(1).at(i).at(0), 2) + pow(soultions.at(1).at(i).at(1), 2));
-        }
+            // difference.at(i).at(j) = sqrt(pow(solutions.at(i).at(j).at(0), 2) + pow(solutions.at(i).at(j).at(1), 2)) + net_vector_mag.at(i) - sqrt(pow(solutions.at(i+1).at(j).at(0), 2) + pow(solutions.at(i+1).at(j).at(1), 2));
+                difference.at(i).at(j) = 0;
+    }
 
-        std::vector<int>::iterator it = std::min_element(std::begin(difference.at(i)), std::end(difference.at(i)));
-        movement_vectors.at(i) =  solutions.at(i).at(std::distance(std::begin(vec), it));
+        // std::vector<int>::iterator it = std::min_element(std::begin(difference.at(i).begin()), std::end(difference.at(i).end())));
+        // movement_vectors.at(i) =  solutions.at(i).at(std::distance(std::begin(difference.at(i)), it));
         // std::min_element(difference.at(i).begin(), difference.at(i).end())
     }
     // v = v - (b2 - b1);

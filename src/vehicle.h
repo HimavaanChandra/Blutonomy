@@ -63,13 +63,15 @@ private:
     ros::Subscriber vehicle_A_GPS_sub_;
     ros::Subscriber vehicle_B_GPS_sub_;
     ros::Subscriber data_packet_sub_;
-    std::vector<short> range_circles;
-    std::vector<short> movement_vectors;
+    std::vector<double> range_circles;
+    std::vector<double> net_vector;
+    std::vector<double> net_vector_mag;
+    std::vector<std::vector<double>> movement_vectors;
     std::vector<double> vehicle_A_GPS_;
     std::vector<double> vehicle_B_GPS_;
     std::vector<std::vector<double>> vehicle_A_GPS_history_;
     std::vector<std::vector<double>> vehicle_B_GPS_history_;
-    std::vector<std::vector<double>> solutions;
+    std::vector<std::vector<std::vector<double>>> solutions;
     std::vector<std::vector<double>> difference;
 
     void control(void);
@@ -80,7 +82,7 @@ private:
     void acknowledgement(void);
     void localisation(void);
     std::vector<double> explorationVehicleVector(void);
-    std::vector<std::vector<double>> vectorLocalisation(void)
+    std::vector<std::vector<double>> vectorLocalisation(double net_vector_mag, double d1, double d2);
 
     // image_transport::ImageTransport it_;
     // image_transport::Publisher image_pub_; /*!< image publisher*/
