@@ -45,7 +45,7 @@ double Vehicle::rangeCalc(void)
         speed_of_sound_ = 0;
     }
     double time_delta = range / speed_of_sound_;
-    int int_time = time_delta*1000;
+    int int_time = time_delta * 1000;
     std::this_thread::sleep_for(std::chrono::milliseconds(int_time));
     std::cout << "Range: " << range << "Time: " << time_delta << std::endl;
     return range;
@@ -79,7 +79,7 @@ void Vehicle::dataPacketCallback()
     data_packet_.clear();
     //Will need to add rosmsg link message here/ save the message
     float packet_number, x, y, z, timestamp, speed_of_sound, depth, distance_moved, direction_moved;
-    
+
     if (packet_number == 0)
     {
         data_packet_ = {0};
@@ -154,14 +154,12 @@ std::vector<double> Vehicle::explorationVehicleVector(void)
 
 std::vector<std::vector<double>> Vehicle::vectorLocalisation(std::vector<double> net_vector, double d1, double d2)
 {
-    
-    double net_vector_mag = sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2)/*, pow(net_vector.at(2), 2)*/);
-    
-    
+
+    double net_vector_mag = sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2) /*, pow(net_vector.at(2), 2)*/);
+
     double theta = acos((pow(d1, 2) + pow(net_vector_mag, 2) - pow(d2, 2)) / (2 * d1 * net_vector_mag));
     double vector_angle = atan2(net_vector.at(1), net_vector.at(0));
     // double vector_angle = 30;
-
 
     double net_angle_1 = theta + vector_angle;
     double net_angle_2 = -theta + vector_angle;
@@ -169,7 +167,7 @@ std::vector<std::vector<double>> Vehicle::vectorLocalisation(std::vector<double>
     double x1 = d1 * cos(net_angle_1);
     double y1 = d1 * sin(net_angle_1);
     std::vector<double> solution_1 = {x1, y1};
- 
+
     double x2 = d1 * cos(net_angle_2);
     double y2 = d1 * sin(net_angle_2);
     std::vector<double> solution_2 = {x2, y2};
@@ -189,7 +187,6 @@ void Vehicle::localisation(void)
         range_circles.erase(range_circles.begin());
         // net_vector_mag.erase(net_vector_mag.begin());
         solutions.erase(solutions.begin());
-
     }
 
     // Movement vectors in between each range circles
@@ -208,24 +205,24 @@ void Vehicle::localisation(void)
         // explore_vector = movement_vector.at(i);
         // net_vector = explore_vector - investigation_vector;
         net_vector = movement_vectors.at(i);
-        net_vector_mag.push_back(sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2)/*, pow(net_vector.at(2), 2)*/));
+        // net_vector_mag.push_back(sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2)/*, pow(net_vector.at(2), 2)*/));
 
         double d1 = range_circles.at(i);
         double d2 = range_circles.at(i + 1);
 
-        solutions.push_back(vectorLocalisation(net_vector,d1,d2));
+        solutions.push_back(vectorLocalisation(net_vector, d1, d2));
     }
 
-    std::vector<std::vector<double>> movement_vectors;
-    movement_vectors.clear();
+    // std::vector<std::vector<double>> movement_vectors;
+    // movement_vectors.clear();
 
     for (int i = 0; i < range_circles.size() - 1; i++)
     {
         for (int j = 0; j < 1; j++)
         {
             // difference.at(i).at(j) = sqrt(pow(solutions.at(i).at(j).at(0), 2) + pow(solutions.at(i).at(j).at(1), 2)) + net_vector_mag.at(i) - sqrt(pow(solutions.at(i+1).at(j).at(0), 2) + pow(solutions.at(i+1).at(j).at(1), 2));
-                difference.at(i).at(j) = 0;
-    }
+            difference.at(i).at(j) = 0;
+        }
 
         // std::vector<int>::iterator it = std::min_element(std::begin(difference.at(i).begin()), std::end(difference.at(i).end())));
         // movement_vectors.at(i) =  solutions.at(i).at(std::distance(std::begin(difference.at(i)), it));
