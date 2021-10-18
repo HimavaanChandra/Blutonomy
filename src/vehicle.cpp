@@ -93,7 +93,7 @@ void Vehicle::mainFunction(void)
 
     // Work out pose to point of interest to vehicle B
 
-    //Drive vehicle B to point
+    // Drive vehicle B to point
 
 }
 
