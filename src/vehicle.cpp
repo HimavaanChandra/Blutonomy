@@ -204,7 +204,7 @@ void Vehicle::localisation(void)
 
         // explore_vector = movement_vector.at(i);
         // net_vector = explore_vector - investigation_vector;
-        net_vector = movement_vectors.at(i);
+        net_vector.push_back(movement_vectors.at(i));
         // net_vector_mag.push_back(sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2)/*, pow(net_vector.at(2), 2)*/));
 
         double d1 = range_circles.at(i);
@@ -216,18 +216,33 @@ void Vehicle::localisation(void)
     // std::vector<std::vector<double>> movement_vectors;
     // movement_vectors.clear();
 
+    double lowest_difference = 0;
+    std::vector<double> lowest_index = {0,0};
+
     for (int i = 0; i < range_circles.size() - 1; i++)
     {
         for (int j = 0; j < 1; j++)
         {
-            // difference.at(i).at(j) = sqrt(pow(solutions.at(i).at(j).at(0), 2) + pow(solutions.at(i).at(j).at(1), 2)) + net_vector_mag.at(i) - sqrt(pow(solutions.at(i+1).at(j).at(0), 2) + pow(solutions.at(i+1).at(j).at(1), 2));
-            difference.at(i).at(j) = 0;
+
+            // diffs(i,j) = norm((A1(i,:) + A1_A2) - A2(j,:))
+            std::vector<double> vector_x = solutions.at(0).at(i).at(0) + solutions.at(1).at(j).at(0) + net_vector.at(0);
+            std::vector<double> vector_y = solutions.at(0).at(i).at(1) + solutions.at(1).at(j).at(1) + net_vector.at(1);
+
+            difference = sqrt(pow(vector_x,2)+pow(vector_y,2));
+            
+
+            if (difference<lowest_difference || lowest_difference = 0)
+            {
+                    lowest_difference = difference;
+                    lowest_index = {i,j};
+            }
+
         }
 
-        // std::vector<int>::iterator it = std::min_element(std::begin(difference.at(i).begin()), std::end(difference.at(i).end())));
-        // movement_vectors.at(i) =  solutions.at(i).at(std::distance(std::begin(difference.at(i)), it));
-        // std::min_element(difference.at(i).begin(), difference.at(i).end())
     }
+
+    std::vector <double> solution = solutions.at(lowest_index(0)).at(lowest_index(1));
+    net_vector.clear();
     // v = v - (b2 - b1);
     // theta = acos((d1 ^ 2 + norm(v) ^ 2 - d2 ^ 2) / (2 * d1 * norm(v)));
     // vector_angle = atan2(v(2), v(1));
