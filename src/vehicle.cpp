@@ -72,6 +72,29 @@ void Vehicle::mainFunction(void)
 {
     std::cout << "initialised" << std::endl;
     control();
+
+    // Start spiral pattern
+
+    // Wait a certain (possibly random) amount of time before finding point of interest
+
+    // Send first range circle
+
+    // Wait 1-2 mins
+
+    // Send second range circle
+
+    // Perform first localisation calc
+
+    // wait 1-2 mins
+
+    // Perform second localisation calc
+
+    // Calculate position of vehicle A
+
+    // Work out pose to point of interest to vehicle B
+
+    //Drive vehicle B to point
+
 }
 
 void Vehicle::dataPacketCallback()
