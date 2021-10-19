@@ -35,23 +35,23 @@ void Vehicle::vehicleBGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg)
     vehicle_B_GPS_ = {msg->latitude, msg->longitude};
 }
 
-double Vehicle::rangeCalc(void)
-{
-    double range = std::sqrt(std::pow(vehicle_A_GPS_[0] - vehicle_B_GPS_[0], 2) + std::pow(vehicle_A_GPS_[1] - vehicle_B_GPS_[1], 2));
-    if (data_packet_[0] >= 1)
-    {
-        speed_of_sound_ = data_packet_[2];
-    }
-    else
-    {
-        speed_of_sound_ = 0;
-    }
-    double time_delta = range / speed_of_sound_;
-    int int_time = time_delta * 1000;
-    std::this_thread::sleep_for(std::chrono::milliseconds(int_time));
-    std::cout << "Range: " << range << "Time: " << time_delta << std::endl;
-    return range;
-}
+// double Vehicle::rangeCalc(void)
+// {
+//     double range = std::sqrt(std::pow(vehicle_A_GPS_[0] - vehicle_B_GPS_[0], 2) + std::pow(vehicle_A_GPS_[1] - vehicle_B_GPS_[1], 2));
+//     if (data_packet_[0] >= 1)
+//     {
+//         speed_of_sound_ = data_packet_[2];
+//     }
+//     else
+//     {
+//         speed_of_sound_ = 0;
+//     }
+//     double time_delta = range / speed_of_sound_;
+//     int int_time = time_delta * 1000;
+//     std::this_thread::sleep_for(std::chrono::milliseconds(int_time));
+//     std::cout << "Range: " << range << "Time: " << time_delta << std::endl;
+//     return range;
+// }
 
 void Vehicle::mainFunction(void)
 {
@@ -89,7 +89,7 @@ void Vehicle::mainFunction(void)
     while (distance_to_goal_mag > 0.0001)
     {
         distance_to_goal = {goal.at(0) - vehicle_B_GPS_.at(0), goal.at(1) - vehicle_B_GPS_.at(1)};
-        distance_to_goal_mag = sqrt(pow(distance_to_goal.at(0), 2) + pow(distance_to_goal.at(1), 2);
+        distance_to_goal_mag = sqrt(pow(distance_to_goal.at(0), 2) + pow(distance_to_goal.at(1), 2));
         purePursuit(distance_to_goal.at(0), distance_to_goal_mag);
     }
 
@@ -193,12 +193,12 @@ void Vehicle::acknowledgement(void)
     acknowledgement_.publish(acknowledgement_data_);
 }
 
-std::vector<double> Vehicle::explorationVehicleVector(void)
+std::vector<float> Vehicle::explorationVehicleVector(void)
 {
     //Vehicle A movement vector, function name check
     //pGet last 2 gps points
     int vector_size = vehicle_A_GPS_history_.size();
-    std::vector<double> exploration_movement_vector;
+    std::vector<float> exploration_movement_vector;
     if (vector_size > 1)
     {
         //latitude
@@ -226,7 +226,7 @@ std::vector<double> Vehicle::explorationVehicleVector(void)
     return exploration_movement_vector;
 }
 
-std::vector<std::vector<double>> Vehicle::vectorLocalisation(std::vector<double> net_vector, double d1, double d2)
+std::vector<std::vector<float>> Vehicle::vectorLocalisation(std::vector<float> net_vector, double d1, double d2)
 {
 
     double net_vector_mag = sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2) /*, pow(net_vector.at(2), 2)*/);
@@ -240,11 +240,11 @@ std::vector<std::vector<double>> Vehicle::vectorLocalisation(std::vector<double>
 
     double x1 = d1 * cos(net_angle_1);
     double y1 = d1 * sin(net_angle_1);
-    std::vector<double> solution_1 = {x1, y1};
+    std::vector<float> solution_1 = {x1, y1};
 
     double x2 = d1 * cos(net_angle_2);
     double y2 = d1 * sin(net_angle_2);
-    std::vector<double> solution_2 = {x2, y2};
+    std::vector<float> solution_2 = {x2, y2};
 
     return {solution_1, solution_2};
 }
@@ -284,7 +284,7 @@ void Vehicle::localisation(void)
             // net_vector = explore_vector - investigation_vector;
 
             //  Net vector combin vehicle A and B movement vectors
-            net_vector.push_back(movement_vectors.at(i));
+            net_vector = movement_vectors.at(i);
             // net_vector_mag.push_back(sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2)/*, pow(net_vector.at(2), 2)*/));
 
             // Radius from vehilce B to Vehicle A circles 1 and 2
@@ -296,7 +296,7 @@ void Vehicle::localisation(void)
         }
 
         double lowest_difference = 0;
-        std::vector<double> lowest_index = {0, 0};
+        std::vector<int> lowest_index = {0, 0};
 
         for (int i = 0; i < number_of_distance_circles - 2; i++)
         {
@@ -305,12 +305,12 @@ void Vehicle::localisation(void)
 
                 // diffs(i,j) = norm((A1(i,:) + A1_A2) - A2(j,:))
                 // Solutions .at(circle vector 1 or 2) .at(solution 1 or 2) . at(x or y)
-                std::vector<double> vector_x = solutions.at(0).at(i).at(0) - solutions.at(1).at(j).at(0) + net_vector.at(0);
-                std::vector<double> vector_y = solutions.at(0).at(i).at(1) - solutions.at(1).at(j).at(1) + net_vector.at(1);
+                double vector_x = solutions.at(0).at(i).at(0) - solutions.at(1).at(j).at(0) + net_vector.at(0);
+                double vector_y = solutions.at(0).at(i).at(1) - solutions.at(1).at(j).at(1) + net_vector.at(1);
 
                 difference = sqrt(pow(vector_x, 2) + pow(vector_y, 2));
 
-                if (difference < lowest_difference || lowest_difference = 0)
+                if (difference < lowest_difference || lowest_difference == 0)
                 {
                     lowest_difference = difference;
                     lowest_index = {i, j};
@@ -318,8 +318,8 @@ void Vehicle::localisation(void)
             }
         }
 
-        std::vector<double> solution1 = solutions.at(0).at(lowest_index(i));
-        std::vector<double> solution2 = solutions.at(1).at(lowest_index(j));
+        std::vector<float> solution1 = solutions.at(0).at(lowest_index.at(0));
+        std::vector<float> solution2 = solutions.at(1).at(lowest_index.at(1));
 
         resultant_ = {solution1.at(0) + solution2.at(0), solution1.at(1) + solution2.at(1)};
 
@@ -338,8 +338,8 @@ void Vehicle::localisation(void)
 void Vehicle::purePursuit(double centreDistance, double range)
 {
     // Calculating maximum angular velocity for velocity control
-    double gamma = (2 * std::sin(centreDistance)) / std::pow(range, 2);
-    double linear_velocity = 0.22;
+    float gamma = (2 * std::sin(centreDistance)) / std::pow(range, 2);
+    float linear_velocity = 0.22;
     //   double angular_velocity = linear_velocity * gamma * 5;
     //   if (gamma < 0)
     //   {
@@ -361,17 +361,28 @@ void Vehicle::purePursuit(double centreDistance, double range)
         linear_velocity = 1;
     }
 
-    while (linear_velocity > 1 || angular_velocity > 1)
+    while (linear_velocity > 1 /*|| angular_velocity > 1*/)
     {
         // angular_velocity *= 0.99;
         linear_velocity *= 0.99;
     }
+    l_thrust_.data = linear_velocity;
+    r_thrust_.data = linear_velocity;
 
-    left_thrust_.publish(linear_velocity);
-    left_thrust_angle_.publish(gamma);
+    l_thrust_angle_.data = gamma;
+    r_thrust_angle_.data = gamma;
 
-    right_thrust_.publish(linear_velocity);
-    right_thrust_angle_.publish(gamma);
+    left_thrust_.publish(l_thrust_);
+    left_thrust_angle_.publish(l_thrust_angle_);
+
+    right_thrust_.publish(r_thrust_);
+    right_thrust_angle_.publish(r_thrust_angle_);
+
+    // left_thrust_.publish(linear_velocity);
+    // left_thrust_angle_.publish(gamma);
+
+    // right_thrust_.publish(linear_velocity);
+    // right_thrust_angle_.publish(gamma);
 
     // robot_.twist_.linear.x = linear_velocity;
     // robot_.twist_.angular.z = angular_velocity;
