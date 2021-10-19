@@ -66,7 +66,11 @@ void Vehicle::mainFunction(void)
 
     while (!localised_)
     {
-        localisation();
+        publishDataPacket();
+        if (data_packet_.at(0) > 1)
+        {
+            localisation();
+        }
         // Wait 1 minute
         std::this_thread::sleep_for(std::chrono::seconds(transmission_delay));
     }
@@ -117,9 +121,11 @@ void Vehicle::publishDataPacket()
     float POI_lattitude = 0;
     float POI_longitude = 0;
     float z = 0;
+
     //Vehicle A movement vector
-    float A_latitude_moved = 0;
-    float A_longitude_moved = 0;
+    std::vector<float> A_moved = explorationVehicleVector();
+    float A_latitude_moved = A_moved.at(0);
+    float A_longitude_moved = A_moved.at(1);
 
     //Run range function here then send delay and speed of sound?
     float timestamp = simulateRange();
@@ -139,15 +145,14 @@ void Vehicle::publishDataPacket()
     }
 
     //ros publish datapacket
-
-
 }
 
 void Vehicle::dataPacketCallback()
 {
+    //Redo once message is constructed
     data_packet_.clear();
     //Will need to add rosmsg link message here/ save the message
-    float packet_number, x, y, z, timestamp, speed_of_sound, depth, distance_moved, direction_moved;
+    float packet_number, POI_lattitude, POI_longitude, z, timestamp, speed_of_sound, depth, A_latitude_moved, A_longitude_moved;
 
     if (packet_number == 0)
     {
@@ -161,7 +166,7 @@ void Vehicle::dataPacketCallback()
         // Speed of sound of vehicle A
         // Vehicle A Depth
         // Vehicle A to point of interest pose: (x,y,z)
-        data_packet_ = {packet_number, timestamp, speed_of_sound, depth, x, y, z};
+        data_packet_ = {packet_number, timestamp, speed_of_sound, depth, POI_lattitude, POI_longitude, z};
         vehicle_A_GPS_history_.push_back(vehicle_A_GPS_);
         vehicle_B_GPS_history_.push_back(vehicle_B_GPS_);
     }
@@ -173,7 +178,7 @@ void Vehicle::dataPacketCallback()
         // Speed of sound of vehicle A
         // Vehicle A Depth
         // Distance and direction moved since the last transmission
-        data_packet_ = {packet_number, timestamp, speed_of_sound, depth, distance_moved, direction_moved};
+        data_packet_ = {packet_number, timestamp, speed_of_sound, depth, A_latitude_moved, A_longitude_moved};
         vehicle_A_GPS_history_.push_back(vehicle_A_GPS_);
         vehicle_B_GPS_history_.push_back(vehicle_B_GPS_);
     }
@@ -196,10 +201,10 @@ std::vector<double> Vehicle::explorationVehicleVector(void)
     std::vector<double> exploration_movement_vector;
     if (vector_size > 1)
     {
-        //longitude
-        exploration_movement_vector.push_back(vehicle_A_GPS_history_.at(vector_size - 1).at(0) - vehicle_A_GPS_history_.at(vector_size - 2).at(0));
         //latitude
         exploration_movement_vector.push_back(vehicle_A_GPS_history_.at(0).at(vector_size - 1) - vehicle_A_GPS_history_.at(0).at(vector_size - 2));
+        //longitude
+        exploration_movement_vector.push_back(vehicle_A_GPS_history_.at(vector_size - 1).at(0) - vehicle_A_GPS_history_.at(vector_size - 2).at(0));
     }
 
     //Pushback to vector
@@ -254,10 +259,12 @@ void Vehicle::localisation(void)
     net_vector.clear();
 
     // Add the most recent distance circle
-    range_circles.push_back(rangeCalc(data_packet.at(1)));
+    range_circles.push_back(rangeCalc(data_packet_.at(1)));
 
+    std::vector<float> A_moved = {data_packet_.at(4), data_packet_.at(5)};
     // Add the most recent movement vector
-    movement_vectors.push_back(explorationVehicleVector());
+
+    movement_vectors.push_back(A_moved);
 
     if (movement_vectors.size() > number_of_distance_circles - 1)
     {
