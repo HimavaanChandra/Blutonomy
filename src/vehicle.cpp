@@ -139,10 +139,8 @@ void Vehicle::publishDataPacket()
     }
 
     //ros publish datapacket
-    //Simulate timings
 
-    // data_packet_ = {packet_number, timestamp, speed_of_sound, depth, x, y, z};
-    // data_packet_ = {packet_number, timestamp, speed_of_sound, depth, distance_moved, direction_moved};
+
 }
 
 void Vehicle::dataPacketCallback()
