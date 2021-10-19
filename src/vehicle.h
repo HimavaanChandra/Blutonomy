@@ -60,6 +60,24 @@ private:
     std_msgs::Float32 l_thrust_angle_;
     std_msgs::Float32 r_thrust_angle_;
 
+
+    ros::Publisher lateral_thrust_2_;
+    ros::Publisher lateral_thrust_angle_2_;
+
+    ros::Publisher left_thrust_2_;
+    ros::Publisher left_thrust_angle_2_;
+
+    ros::Publisher right_thrust_2_;
+    ros::Publisher right_thrust_angle_2_;
+
+    std_msgs::Float32 lat_thrust_2_;
+    std_msgs::Float32 l_thrust_2_;
+    std_msgs::Float32 r_thrust_2_;
+
+    std_msgs::Float32 lat_thrust_angle_2_;
+    std_msgs::Float32 l_thrust_angle_2_;
+    std_msgs::Float32 r_thrust_angle_2_;
+
     const int speed_of_sound_ = 1500; //maybe change over time
     std::vector<float> data_packet_;
     int packet_number_;

@@ -12,6 +12,15 @@ Vehicle::Vehicle(ros::NodeHandle nh) : nh_(nh)
     right_thrust_ = nh_.advertise<std_msgs::Float32>("/wamv/thrusters/right_thrust_cmd", 1);
     right_thrust_angle_ = nh_.advertise<std_msgs::Float32>("/wamv/thrusters/right_thrust_angle", 1);
 
+    lateral_thrust_2_ = nh_.advertise<std_msgs::Float32>("/wamv2/thrusters/lateral_thrust_cmd", 1);
+    lateral_thrust_angle_2_ = nh_.advertise<std_msgs::Float32>("/wamv2/thrusters/lateral_thrust_angle", 1);
+
+    left_thrust_2_ = nh_.advertise<std_msgs::Float32>("/wamv2/thrusters/left_thrust_cmd", 1);
+    left_thrust_angle_2_ = nh_.advertise<std_msgs::Float32>("/wamv2/thrusters/left_thrust_angle", 1);
+
+    right_thrust_2_ = nh_.advertise<std_msgs::Float32>("/wamv2/thrusters/right_thrust_cmd", 1);
+    right_thrust_angle_2_ = nh_.advertise<std_msgs::Float32>("/wamv2/thrusters/right_thrust_angle", 1);
+
     acknowledgement_ = nh_.advertise<std_msgs::Int64>("/acknowledgement", 1);
 
     //Subscribers
@@ -66,10 +75,15 @@ void Vehicle::mainFunction(void)
 
     while (!localised_)
     {
+        std::cout << "localised while loop" << std::endl;
         publishDataPacket();
-        if (data_packet_.at(0) > 1)
+        if (data_packet_.size() > 1)
         {
-            localisation();
+            if (data_packet_.at(0) > 1)
+            {
+                std::cout << "datapacket if statement" << std::endl;
+                localisation();
+            }
         }
         // Wait 1 minute
         std::this_thread::sleep_for(std::chrono::seconds(transmission_delay));
@@ -123,28 +137,35 @@ void Vehicle::publishDataPacket()
     float z = 0;
 
     //Vehicle A movement vector
+    std::cout << "Publish datapacket function" << std::endl;
     std::vector<float> A_moved = explorationVehicleVector();
-    float A_latitude_moved = A_moved.at(0);
-    float A_longitude_moved = A_moved.at(1);
 
-    //Run range function here then send delay and speed of sound?
-    float timestamp = simulateRange();
-    float depth = 0; //since on surface
-
-    std::vector<float> data_packet = {0};
-
-    if (packet_number_ == 0)
+    if (A_moved.size() >= 2)
     {
-        packet_number_++;
-        data_packet = {packet_number_, timestamp, speed_of_sound_, depth, POI_lattitude, POI_longitude, z};
-    }
-    else if (packet_number_ >= 1)
-    {
-        packet_number_++;
-        data_packet = {packet_number_, timestamp, speed_of_sound_, depth, A_latitude_moved, A_longitude_moved};
-    }
+        float A_latitude_moved = A_moved.at(0);
+        float A_longitude_moved = A_moved.at(1);
 
-    //ros publish datapacket
+        //Run range function here then send delay and speed of sound?
+        float timestamp = simulateRange();
+        float depth = 0; //since on surface
+
+        std::vector<float> data_packet = {0};
+
+        if (packet_number_ == 0)
+        {
+            packet_number_++;
+            data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, POI_lattitude, POI_longitude, z};
+        }
+        else if (packet_number_ >= 1)
+        {
+            packet_number_++;
+            data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, A_latitude_moved, A_longitude_moved};
+        }
+
+        std::cout << "Publish datapacket function" << std::endl;
+        //ros publish datapacket
+    }
+    std::cout << "Published data packet" << std::endl;
 }
 
 void Vehicle::dataPacketCallback()
@@ -198,14 +219,18 @@ std::vector<float> Vehicle::explorationVehicleVector(void)
     //Vehicle A movement vector, function name check
     //pGet last 2 gps points
     int vector_size = vehicle_A_GPS_history_.size();
+    std::cout << "yeet" << std::endl;
     std::vector<float> exploration_movement_vector;
+    exploration_movement_vector.clear();
     if (vector_size > 1)
     {
+        std::cout << "vector size" << std::endl;
         //latitude
         exploration_movement_vector.push_back(vehicle_A_GPS_history_.at(0).at(vector_size - 1) - vehicle_A_GPS_history_.at(0).at(vector_size - 2));
         //longitude
         exploration_movement_vector.push_back(vehicle_A_GPS_history_.at(vector_size - 1).at(0) - vehicle_A_GPS_history_.at(vector_size - 2).at(0));
     }
+    std::cout << "exploration func end" << std::endl;
 
     //Pushback to vector
 
@@ -265,7 +290,7 @@ void Vehicle::localisation(void)
     // Add the most recent movement vector
 
     movement_vectors.push_back(A_moved);
-
+    std::cout << "localisation function start" << std::endl;
     if (movement_vectors.size() > number_of_distance_circles - 1)
     {
         movement_vectors.erase(movement_vectors.begin());
@@ -366,17 +391,17 @@ void Vehicle::purePursuit(double centreDistance, double range)
         // angular_velocity *= 0.99;
         linear_velocity *= 0.99;
     }
-    l_thrust_.data = linear_velocity;
-    r_thrust_.data = linear_velocity;
+    l_thrust_2_.data = linear_velocity;
+    r_thrust_2_.data = linear_velocity;
 
-    l_thrust_angle_.data = gamma;
-    r_thrust_angle_.data = gamma;
+    l_thrust_angle_2_.data = gamma;
+    r_thrust_angle_2_.data = gamma;
 
-    left_thrust_.publish(l_thrust_);
-    left_thrust_angle_.publish(l_thrust_angle_);
+    left_thrust_2_.publish(l_thrust_2_);
+    left_thrust_angle_2_.publish(l_thrust_angle_2_);
 
-    right_thrust_.publish(r_thrust_);
-    right_thrust_angle_.publish(r_thrust_angle_);
+    right_thrust_2_.publish(r_thrust_2_);
+    right_thrust_angle_2_.publish(r_thrust_angle_2_);
 
     // left_thrust_.publish(linear_velocity);
     // left_thrust_angle_.publish(gamma);
@@ -408,7 +433,7 @@ void Vehicle::control()
     {
         // test = test / (test * 1.1);
 
-        std::cout << l_thrust_angle_.data << std::endl;
+        // std::cout << l_thrust_angle_.data << std::endl;
 
         // increment2 = (increment2)*inc/1.001;
         // increment = increment2 - 0.1;
