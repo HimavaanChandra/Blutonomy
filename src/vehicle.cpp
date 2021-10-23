@@ -71,7 +71,7 @@ void Vehicle::mainFunction(void)
     // Wait a certain (possibly random) amount of time before finding point of interest
     int point_of_interest_delay = 10;
     std::this_thread::sleep_for(std::chrono::seconds(point_of_interest_delay));
-    int transmission_delay = 60;
+    int transmission_delay = 10; // change back to 60 ------------------------------------------------
 
     while (!localised_)
     {
@@ -79,13 +79,14 @@ void Vehicle::mainFunction(void)
         publishDataPacket();
         if (data_packet_.size() > 1)
         {
+            std::cout << "packet number: " << data_packet_.at(0) << std::endl;
             if (data_packet_.at(0) > 1)
             {
-                std::cout << "datapacket if statement" << std::endl;
                 localisation();
             }
         }
         // Wait 1 minute
+        std::cout << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(transmission_delay));
     }
 
@@ -113,12 +114,14 @@ void Vehicle::mainFunction(void)
 double Vehicle::simulateRange(void)
 {
     double time_now = std::chrono::system_clock::now().time_since_epoch().count();
+    //Range is wrong, need to convert to metres from longitude and lattitude
     double range = std::sqrt(std::pow(vehicle_A_GPS_[0] - vehicle_B_GPS_[0], 2) + std::pow(vehicle_A_GPS_[1] - vehicle_B_GPS_[1], 2));
     double time_delta = range / speed_of_sound_;
     int int_time = time_delta * 1000;
     std::this_thread::sleep_for(std::chrono::milliseconds(int_time));
-    std::cout << "Range: " << range << "Time: " << time_delta << std::endl;
-    return time_now;
+    std::cout << "Range sent: " << range << "Time: " << time_delta << std::endl;
+    // return time_now;
+    return range;
 }
 
 double Vehicle::rangeCalc(double time_sent)
@@ -126,6 +129,7 @@ double Vehicle::rangeCalc(double time_sent)
     double time_now = std::chrono::system_clock::now().time_since_epoch().count();
     double delta_time = time_now - time_sent;
     short range = speed_of_sound_ * delta_time;
+    std::cout << "Range received: " << range << "Time delta: " << delta_time << std::endl;
     return range;
 }
 
@@ -137,16 +141,18 @@ void Vehicle::publishDataPacket()
     float z = 0;
 
     //Vehicle A movement vector
-    std::cout << "Publish datapacket function" << std::endl;
+    vehicle_A_GPS_history_.push_back(vehicle_A_GPS_);
+    vehicle_B_GPS_history_.push_back(vehicle_B_GPS_);
+    std::cout << "gps history size: " << vehicle_A_GPS_history_.size()/2 << std::endl;
     std::vector<float> A_moved = explorationVehicleVector();
-
     if (A_moved.size() >= 2)
     {
         float A_latitude_moved = A_moved.at(0);
         float A_longitude_moved = A_moved.at(1);
 
         //Run range function here then send delay and speed of sound?
-        float timestamp = simulateRange();
+        // float timestamp = simulateRange();
+        float range = simulateRange();
         float depth = 0; //since on surface
 
         std::vector<float> data_packet = {0};
@@ -154,18 +160,21 @@ void Vehicle::publishDataPacket()
         if (packet_number_ == 0)
         {
             packet_number_++;
-            data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, POI_lattitude, POI_longitude, z};
+            // Send range instead of timestamp for sim
+            // data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, POI_lattitude, POI_longitude, z};
+            data_packet_ = {packet_number_, range, speed_of_sound_, depth, POI_lattitude, POI_longitude, z};
         }
         else if (packet_number_ >= 1)
         {
             packet_number_++;
-            data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, A_latitude_moved, A_longitude_moved};
+            // Send range instead of timestamp for sim
+            // data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, A_latitude_moved, A_longitude_moved};
+            data_packet_ = {packet_number_, range, speed_of_sound_, depth, A_latitude_moved, A_longitude_moved};
         }
+        std::cout << "packet sent number: " << data_packet_.at(0) << std::endl;
 
-        std::cout << "Publish datapacket function" << std::endl;
-        //ros publish datapacket
+        //ros publish datapacket--------------------------------------------------------
     }
-    std::cout << "Published data packet" << std::endl;
 }
 
 void Vehicle::dataPacketCallback()
@@ -219,34 +228,18 @@ std::vector<float> Vehicle::explorationVehicleVector(void)
     //Vehicle A movement vector, function name check
     //pGet last 2 gps points
     int vector_size = vehicle_A_GPS_history_.size();
-    std::cout << "yeet" << std::endl;
     std::vector<float> exploration_movement_vector;
     exploration_movement_vector.clear();
     if (vector_size > 1)
     {
-        std::cout << "vector size" << std::endl;
         //latitude
-        exploration_movement_vector.push_back(vehicle_A_GPS_history_.at(0).at(vector_size - 1) - vehicle_A_GPS_history_.at(0).at(vector_size - 2));
+        float latitude = vehicle_A_GPS_history_.at(vector_size - 1).at(0) - vehicle_A_GPS_history_.at(vector_size - 2).at(0);
+        exploration_movement_vector.push_back(latitude);
         //longitude
-        exploration_movement_vector.push_back(vehicle_A_GPS_history_.at(vector_size - 1).at(0) - vehicle_A_GPS_history_.at(vector_size - 2).at(0));
+        float longitude = vehicle_A_GPS_history_.at(vector_size - 1).at(1) - vehicle_A_GPS_history_.at(vector_size - 2).at(1);
+        exploration_movement_vector.push_back(longitude);
+        std::cout << "latitude, longitude: " << latitude << ", " << longitude << std::endl;
     }
-    std::cout << "exploration func end" << std::endl;
-
-    //Pushback to vector
-
-    //Check how many values the vector has
-
-    //subtract each segment to get the vectors
-
-    //Add random tolerance to ranges - google drive - 0.1cm per second,
-    // unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
-    // std::default_random_engine generator(seed);
-    // create a uniform distribution between 0 and 10 and draw elements from it
-    // std::uniform_real_distribution<double> distribution(max_radius, 0);
-    // std::normal_distribution<double> distribution(4, 5);
-    // double elements = distribution(generator); // Generates a random double
-
-    //To implement, will need to see delta time, then multiply this buy a random value to 0.1 in seconds to both vector components
 
     return exploration_movement_vector;
 }
@@ -284,8 +277,8 @@ void Vehicle::localisation(void)
     net_vector.clear();
 
     // Add the most recent distance circle
-    range_circles.push_back(rangeCalc(data_packet_.at(1)));
-
+    // range_circles.push_back(rangeCalc(data_packet_.at(1)));
+    range_circles.push_back(data_packet_.at(1));
     std::vector<float> A_moved = {data_packet_.at(4), data_packet_.at(5)};
     // Add the most recent movement vector
 
@@ -295,12 +288,14 @@ void Vehicle::localisation(void)
     {
         movement_vectors.erase(movement_vectors.begin());
     }
+        std::cout<<"yeet: "<<range_circles.size()<<std::endl;
 
     // Localise when 3 range circles and remove the oldest range circle if more than 3 availble
     if (range_circles.size() > number_of_distance_circles)
     {
         range_circles.erase(range_circles.begin());
         solutions.erase(solutions.begin());
+                std::cout<<"yeetspegeet:"<<std::endl;
 
         for (int i = 0; i < number_of_distance_circles - 2; i++)
         {
@@ -319,6 +314,7 @@ void Vehicle::localisation(void)
             // Push back solution 1 and 2 for each movement vector localisation. solutions .at(circle vector 1 or 2) .at(solution 1 or 2) . at(x or y)
             solutions.push_back(vectorLocalisation(net_vector, d1, d2));
         }
+        std::cout<<"yeetusspeegetus"<<std::endl;
 
         double lowest_difference = 0;
         std::vector<int> lowest_index = {0, 0};
@@ -357,6 +353,7 @@ void Vehicle::localisation(void)
     // [ x2, y2 ] = pol2cart(-theta + vector_angle, d1);
     // solution1 = [ -x1, -y1 ] + b1; % first solution for A1
     // solution2 = [-x2, -y2] + b1; % second solution for A1
+    std::cout << "Localisation function end, localised_: "<< localised_ << std::endl;
 }
 
 // centrDistance = latitude    Range = magnitude
