@@ -80,6 +80,8 @@ private:
     std_msgs::Float32 r_thrust_angle_2_;
 
     const int speed_of_sound_ = 1500; //maybe change over time
+    const int lat_to_meters = 111139;
+    const int long_to_meters = 111190;
     std::vector<float> data_packet_;
     int packet_number_;
 

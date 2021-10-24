@@ -69,9 +69,9 @@ void Vehicle::mainFunction(void)
     // Spiral pattern is running in separate thread
 
     // Wait a certain (possibly random) amount of time before finding point of interest
-    int point_of_interest_delay = 10;
+    int point_of_interest_delay = 5;
     std::this_thread::sleep_for(std::chrono::seconds(point_of_interest_delay));
-    int transmission_delay = 10; // change back to 60 ------------------------------------------------
+    int transmission_delay = 5; // change back to 60 ------------------------------------------------
 
     while (!localised_)
     {
@@ -85,16 +85,9 @@ void Vehicle::mainFunction(void)
                 localisation();
             }
         }
-        // Wait 1 minute
         std::cout << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(transmission_delay));
     }
-
-    // Calculate position of vehicle A
-
-    // Work out pose to point of interest to vehicle B
-
-    // Drive vehicle B to point
 
     std::vector<double> goal = {resultant_.at(0) + vehicle_B_GPS_.at(0), resultant_.at(1) + vehicle_B_GPS_.at(1)};
 
@@ -103,7 +96,7 @@ void Vehicle::mainFunction(void)
 
     while (distance_to_goal_mag > 0.0001)
     {
-        distance_to_goal = {goal.at(0) - vehicle_B_GPS_.at(0), goal.at(1) - vehicle_B_GPS_.at(1)};
+        distance_to_goal = {resultant_.at(0) - vehicle_B_GPS_.at(0), resultant_.at(1) - vehicle_B_GPS_.at(1)};
         distance_to_goal_mag = sqrt(pow(distance_to_goal.at(0), 2) + pow(distance_to_goal.at(1), 2));
         purePursuit(distance_to_goal.at(0), distance_to_goal_mag);
     }
@@ -115,7 +108,7 @@ double Vehicle::simulateRange(void)
 {
     double time_now = std::chrono::system_clock::now().time_since_epoch().count();
     //Range is wrong, need to convert to metres from longitude and lattitude
-    double range = std::sqrt(std::pow(vehicle_A_GPS_[0] - vehicle_B_GPS_[0], 2) + std::pow(vehicle_A_GPS_[1] - vehicle_B_GPS_[1], 2));
+    double range = std::sqrt(std::pow((vehicle_A_GPS_[0] - vehicle_B_GPS_[0])*lat_to_meters, 2) + std::pow((vehicle_A_GPS_[1] - vehicle_B_GPS_[1])*long_to_meters, 2));
     double time_delta = range / speed_of_sound_;
     int int_time = time_delta * 1000;
     std::this_thread::sleep_for(std::chrono::milliseconds(int_time));
@@ -234,10 +227,10 @@ std::vector<float> Vehicle::explorationVehicleVector(void)
     {
         //latitude
         float latitude = vehicle_A_GPS_history_.at(vector_size - 1).at(0) - vehicle_A_GPS_history_.at(vector_size - 2).at(0);
-        exploration_movement_vector.push_back(latitude);
+        exploration_movement_vector.push_back(latitude*lat_to_meters);
         //longitude
         float longitude = vehicle_A_GPS_history_.at(vector_size - 1).at(1) - vehicle_A_GPS_history_.at(vector_size - 2).at(1);
-        exploration_movement_vector.push_back(longitude);
+        exploration_movement_vector.push_back(longitude*long_to_meters);
         std::cout << "latitude, longitude: " << latitude << ", " << longitude << std::endl;
     }
 
