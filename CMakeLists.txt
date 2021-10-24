@@ -24,7 +24,17 @@ message ( STATUS " CMake C++ FLAGS ${CMAKE_CXX_FLAGS}")
 find_package(OpenCV)
 find_package(Eigen3 REQUIRED)
 
+ add_message_files(
+   FILES
+   data_packet.msg
+ )
 
+ generate_messages(
+   DEPENDENCIES
+   geometry_msgs
+   std_msgs
+ )
+ 
 catkin_package(
 LIBRARIES
 INCLUDE_DIRS
@@ -44,11 +54,20 @@ include_directories(
 
 ## Declare a C++ executable
 add_executable(${PROJECT_NAME} src/main.cpp src/communication.cpp src/vehicle.cpp)
-
+add_executable(data_packet_pub src/data_packet_pub.cpp)
+add_executable(data_packet_sub src/data_packet_sub.cpp)
 
 ## Add cmake target dependencies of the executable
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(data_packet_pub ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(data_packet_sub ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+ target_link_libraries(data_packet_pub
+   ${catkin_LIBRARIES}
+ )
+ target_link_libraries(data_packet_sub
+   ${catkin_LIBRARIES}
+ )
 
