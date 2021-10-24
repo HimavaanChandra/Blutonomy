@@ -294,10 +294,10 @@ void Vehicle::localisation(void)
     if (range_circles.size() > number_of_distance_circles)
     {
         range_circles.erase(range_circles.begin());
-        solutions.erase(solutions.begin());
+
                 std::cout<<"yeetspegeet:"<<std::endl;
 
-        for (int i = 0; i < number_of_distance_circles - 2; i++)
+        for (int i = 0; i < number_of_distance_circles - 1; i++)
         {
 
             // explore_vector = movement_vector.at(i);
@@ -319,15 +319,15 @@ void Vehicle::localisation(void)
         double lowest_difference = 0;
         std::vector<int> lowest_index = {0, 0};
 
-        for (int i = 0; i < number_of_distance_circles - 2; i++)
+        for (int i = 0; i < number_of_distance_circles-1; i++)
         {
-            for (int j = 0; j < 1; j++)
+            for (int j = 0; j < 2; j++)
             {
 
                 // diffs(i,j) = norm((A1(i,:) + A1_A2) - A2(j,:))
                 // Solutions .at(circle vector 1 or 2) .at(solution 1 or 2) . at(x or y)
-                double vector_x = solutions.at(0).at(i).at(0) - solutions.at(1).at(j).at(0) + net_vector.at(0);
-                double vector_y = solutions.at(0).at(i).at(1) - solutions.at(1).at(j).at(1) + net_vector.at(1);
+                double vector_x = solutions.at(0).at(i).at(j) - solutions.at(1).at(i).at(j) + net_vector.at(0);
+                double vector_y = solutions.at(0).at(i).at(j) - solutions.at(1).at(i).at(j) + net_vector.at(1);
 
                 difference = sqrt(pow(vector_x, 2) + pow(vector_y, 2));
 
@@ -341,6 +341,9 @@ void Vehicle::localisation(void)
 
         std::vector<float> solution1 = solutions.at(0).at(lowest_index.at(0));
         std::vector<float> solution2 = solutions.at(1).at(lowest_index.at(1));
+
+        solutions.clear();
+
 
         resultant_ = {solution1.at(0) + solution2.at(0), solution1.at(1) + solution2.at(1)};
 
