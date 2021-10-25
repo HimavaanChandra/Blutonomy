@@ -23,10 +23,14 @@ Vehicle::Vehicle(ros::NodeHandle nh) : nh_(nh)
 
     acknowledgement_ = nh_.advertise<std_msgs::Int64>("/acknowledgement", 1);
 
+    data_packet_pub_ = nh_.advertise<data_packet_msg_cpp::data_packet>("/data_packet", 1);
+
+
     //Subscribers
-    // data_packet_sub_ = nh_.subscribe("/chatter", 1, &Vehicle::dataPacketCallback, this);    //Change topic need to add, this------------------------
     vehicle_A_GPS_sub_ = nh_.subscribe("/wamv/sensors/gps/gps/fix", 1, &Vehicle::vehicleAGPSCallback, this);
     vehicle_B_GPS_sub_ = nh_.subscribe("/wamv2/sensors/gps/gps/fix", 1, &Vehicle::vehicleBGPSCallback, this);
+    
+    data_packet_sub_ = nh_.subscribe("/data_packet", 1, &Vehicle::dataPacketCallback, this);
 
     l_thrust_.data = 0;
     r_thrust_.data = 0;
@@ -77,6 +81,7 @@ void Vehicle::mainFunction(void)
     {
         std::cout << "localised while loop" << std::endl;
         publishDataPacket();
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         if (data_packet_.size() > 1)
         {
             std::cout << "packet number: " << data_packet_.at(0) << std::endl;
@@ -173,64 +178,43 @@ void Vehicle::publishDataPacket()
         float range = simulateRange();
         float depth = 0; //since on surface
         Blutonomy::data_packet msg; 
-        
+        packet_number_++;
         if (packet_number_ == 0)
         {
-            packet_number_++;
             // Send range instead of timestamp for sim
-            // data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, POI_lattitude, POI_longitude, z};
-            data_packet_ = {packet_number_, range, speed_of_sound_, depth, POI_lattitude, POI_longitude, z};
-            
-            
-            // msg.packet_number.data = 1;
-            // msg.x.data = 4;
-            // msg.y.data = 3;
-            // msg.z.data = 2;
-            // msg.timestamp.data = 1634532260266; //UNIX ???
-            // msg.speed_of_sound.data = 1500;
-            // msg.depth.data = 10;
-            // msg.distance_moved.data = 5;
-            // msg.direction_moved.data = 15;
-
-        // pub.publish(msg);
-        // ros::spinOnce();
-        // loop_rate.sleep();
+            // data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, POI_lattitude, POI_longitude, z};    
+            msg.packet_number.data = packet_number_;
+            msg.range.data = range;
+            msg.speed_of_sound.data = speed_of_sound_;
+            msg.depth.data = 0;
+            msg.POI_lattitude.data = 0;
+            msg.POI_longitude.data = 0;
+            msg.z.data = 0;
         }
         else if (packet_number_ >= 1)
         {
-            packet_number_++;
             // Send range instead of timestamp for sim
-            // data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, A_latitude_moved, A_longitude_moved};
-            data_packet_ = {packet_number_, range, speed_of_sound_, depth, A_latitude_moved, A_longitude_moved};
-            
-            // msg.packet_number.data = 1;
-            // msg.x.data = 4;
-            // msg.y.data = 3;
-            // msg.z.data = 2;
-            // msg.timestamp.data = 1634532260266; //UNIX ???
-            // msg.speed_of_sound.data = 1500;
-            // msg.depth.data = 10;
-            // msg.distance_moved.data = 5;
-            // msg.direction_moved.data = 15;
+            // data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, A_latitude_moved, A_longitude_moved};  
+            msg.packet_number.data = packet_number_;
+            msg.range.data = range;
+            msg.speed_of_sound.data = speed_of_sound_;
+            msg.depth.data = 0;
+            msg.A_latitude_moved.data = 0;
+            msg.A_longitude_moved.data = 0;
 
-        // pub.publish(msg);
-        // ros::spinOnce();
-        // loop_rate.sleep();
         }
         std::cout << "packet sent number: " << data_packet_.at(0) << std::endl;
 
-        //ros publish datapacket--------------------------------------------------------
+        //ros publish datapacket
+        data_packet_pub_.publish(msg);
+        // ros::spinOnce(); //might need this
     }
 }
 
 //May need 2 callback
-void Vehicle::dataPacketCallback()
+void Vehicle::dataPacketCallback(const data_packet_msg_cpp::data_packet::ConstPtr& msg)
 {
-    //Redo once message is constructed
     data_packet_.clear();
-    //Will need to add rosmsg link message here/ save the message
-    float packet_number, POI_lattitude, POI_longitude, z, timestamp, speed_of_sound, depth, A_latitude_moved, A_longitude_moved;
-
     if (packet_number == 0)
     {
         data_packet_ = {0};
@@ -238,24 +222,14 @@ void Vehicle::dataPacketCallback()
     else if (packet_number == 1)
     {
         // 1st Data Packet
-        // Packet number
-        // Timestamp
-        // Speed of sound of vehicle A
-        // Vehicle A Depth
-        // Vehicle A to point of interest pose: (x,y,z)
-        data_packet_ = {packet_number, timestamp, speed_of_sound, depth, POI_lattitude, POI_longitude, z};
+        data_packet_ = {msg->packet_number.data, msg->range.data, msg->speed_of_sound.data, msg->depth.data, msg->POI_lattitude.data, msg->POI_longitude.data, msg->z.data};
         vehicle_A_GPS_history_.push_back(vehicle_A_GPS_);
         vehicle_B_GPS_history_.push_back(vehicle_B_GPS_);
     }
     else if (packet_number >= 2)
     {
-        // Data Packet
-        // Packet number
-        // Timestamp
-        // Speed of sound of vehicle A
-        // Vehicle A Depth
-        // Distance and direction moved since the last transmission
-        data_packet_ = {packet_number, timestamp, speed_of_sound, depth, A_latitude_moved, A_longitude_moved};
+        // Other Data Packets
+        data_packet_ = {msg->packet_number.data, msg->range.data, msg->speed_of_sound.data, msg->depth.data, msg->A_latitude_moved.data, msg->A_longitude_moved.data};
         vehicle_A_GPS_history_.push_back(vehicle_A_GPS_);
         vehicle_B_GPS_history_.push_back(vehicle_B_GPS_);
     }
