@@ -80,13 +80,14 @@ private:
     std_msgs::Float32 l_thrust_angle_2_;
     std_msgs::Float32 r_thrust_angle_2_;
 
-    const int speed_of_sound_ = 1500; //maybe change over time
+    const int speed_of_sound_ = 1500;
     const int lat_to_meters = 111139;
     const int long_to_meters = 111190;
     std::vector<float> data_packet_;
     int packet_number_;
 
     ros::Publisher acknowledgement_;
+    ros::Publisher data_packet_pub_;
     std_msgs::Int64 acknowledgement_data_;
     ros::Subscriber vehicle_A_GPS_sub_;
     ros::Subscriber vehicle_B_GPS_sub_;
@@ -106,7 +107,7 @@ private:
 
     double rangeCalc(double time_sent);
     double simulateRange(void);
-    void dataPacketCallback(void); // change to "this" PMS style
+    void dataPacketCallback(const Blutonomy::data_packet::ConstPtr& msg);
     void vehicleAGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg);
     void vehicleBGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg);
     void acknowledgement(void);
@@ -115,19 +116,4 @@ private:
     std::vector<float> explorationVehicleVector(void);
     std::vector<std::vector<float>> vectorLocalisation(std::vector<float> net_vector, double d1, double d2);
     void purePursuit(double centreDistance, double range);
-
-    // image_transport::ImageTransport it_;
-    // image_transport::Publisher image_pub_; /*!< image publisher*/
-
-    //use this if splitting the robots in the class instead.
-    // struct Robot
-    // {
-    //     double x_;                     /*!< robot's x coordinate*/
-    //     double y_;                     /*!< robot's y coordinate*/
-    //     double angle_;                 /*!< robot's angle */
-    //     bool obstacle_;                /*!< boolean if there is an object 0.2m in front of the robot*/
-    //     geometry_msgs::Twist control_; /*!< Controller of the robot*/
-    //     std::vector<float> ranges_;    /*!< Laser sensor data*/
-    //     std::mutex mtx_;               /*!< mutex to lock data*/
-    // };
 };
