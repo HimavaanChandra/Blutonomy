@@ -192,14 +192,15 @@ void Vehicle::publishDataPacket()
         }
         else if (packet_number_ >= 1)
         {
+
             // Send range instead of timestamp for sim
             // data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, A_latitude_moved, A_longitude_moved};
             msg.packet_number.data = packet_number_;
             msg.range.data = range;
             msg.speed_of_sound.data = speed_of_sound_;
             msg.depth.data = 0;
-            msg.A_latitude_moved.data = 0;
-            msg.A_longitude_moved.data = 0;
+            msg.A_latitude_moved.data = A_latitude_moved;
+            msg.A_longitude_moved.data = A_longitude_moved;
         }
         std::cout << "packet sent number: " << msg.packet_number.data << std::endl;
 
@@ -277,11 +278,11 @@ std::vector<std::vector<float>> Vehicle::vectorLocalisation(std::vector<float> n
 
     double x1 = d1 * cos(net_angle_1);
     double y1 = d1 * sin(net_angle_1);
-    std::vector<float> solution_1 = {x1, y1};
+    std::vector<float> solution_1 = {-x1, -y1};
 
     double x2 = d1 * cos(net_angle_2);
     double y2 = d1 * sin(net_angle_2);
-    std::vector<float> solution_2 = {x2, y2};
+    std::vector<float> solution_2 = {-x2, -y2};
 
     return {solution_1, solution_2};
 }
@@ -345,8 +346,11 @@ void Vehicle::localisation(void)
 
                 // diffs(i,j) = norm((A1(i,:) + A1_A2) - A2(j,:))
                 // Solutions .at(circle vector 1 or 2) .at(solution 1 or 2) . at(x or y)
-                double vector_x = solutions.at(0).at(i).at(j) - solutions.at(1).at(i).at(j) + net_vector.at(0);
-                double vector_y = solutions.at(0).at(i).at(j) - solutions.at(1).at(i).at(j) + net_vector.at(1);
+                double vector_x = solutions.at(0).at(i).at(0) - solutions.at(1).at(j).at(0) + (range_circles.at(1)-range_circles.at(0));
+                double vector_y = solutions.at(0).at(i).at(1) - solutions.at(1).at(j).at(1) + (range_circles.at(1)-range_circles.at(0));
+                
+                std::cout << vector_x << std::endl;
+                std::cout << vector_y << std::endl;
 
                 difference = sqrt(pow(vector_x, 2) + pow(vector_y, 2));
 
@@ -439,11 +443,16 @@ void Vehicle::control()
 {
     lat_thrust_.data = 1;
 
-    l_thrust_.data = 1;
-    r_thrust_.data = 1;
+    // l_thrust_.data = 1;
+    // r_thrust_.data = 1;
+    l_thrust_.data = 0.3;
+    r_thrust_.data = 0.3;
 
-    l_thrust_angle_.data = 0.1;
-    r_thrust_angle_.data = 0.1;
+    // l_thrust_angle_.data = 0.1;
+    // r_thrust_angle_.data = 0.1;
+    l_thrust_angle_.data = 0;
+    r_thrust_angle_.data = 0;
+    
     double increment;
     double increment2 = 0.1;
 
