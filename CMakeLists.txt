@@ -53,7 +53,7 @@ include_directories(
 
 
 ## Declare a C++ executable
-add_executable(${PROJECT_NAME} src/main.cpp src/communication.cpp src/vehicle.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/vehicle.cpp)
 add_executable(data_packet_pub src/data_packet_pub.cpp)
 add_executable(data_packet_sub src/data_packet_sub.cpp)
 
