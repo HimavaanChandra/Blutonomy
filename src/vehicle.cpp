@@ -335,14 +335,14 @@ void Vehicle::localisation(void)
     {
         movement_vectors.erase(movement_vectors.begin());
     }
-    std::cout << "yeet: " << range_circles.size() << std::endl;
+    // std::cout << "yeet: " << range_circles.size() << std::endl;
 
     // Localise when 3 range circles and remove the oldest range circle if more than 3 availble
     if (range_circles.size() > number_of_distance_circles)
     {
         range_circles.erase(range_circles.begin());
 
-        std::cout << "yeetspegeet:" << std::endl;
+        // std::cout << "yeetspegeet:" << std::endl;
 
         for (int i = 0; i < number_of_distance_circles - 1; i++)
         {
@@ -361,7 +361,7 @@ void Vehicle::localisation(void)
             // Push back solution 1 and 2 for each movement vector localisation. solutions .at(circle vector 1 or 2) .at(solution 1 or 2) . at(x or y)
             solutions.push_back(vectorLocalisation(net_vector, d1, d2));
         }
-        std::cout << "yeetusspeegetus" << std::endl;
+        // std::cout << "yeetusspeegetus" << std::endl;
 
         double lowest_difference = 0;
         std::vector<int> lowest_index = {0, 0};
