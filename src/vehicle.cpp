@@ -23,13 +23,12 @@ Vehicle::Vehicle(ros::NodeHandle nh) : nh_(nh)
 
     acknowledgement_ = nh_.advertise<std_msgs::Int64>("/acknowledgement", 1);
 
-    data_packet_pub_ = nh_.advertise<data_packet_msg_cpp::data_packet>("/data_packet", 1);
-
+    data_packet_pub_ = nh_.advertise<Blutonomy::data_packet>("/data_packet", 1);
 
     //Subscribers
     vehicle_A_GPS_sub_ = nh_.subscribe("/wamv/sensors/gps/gps/fix", 1, &Vehicle::vehicleAGPSCallback, this);
     vehicle_B_GPS_sub_ = nh_.subscribe("/wamv2/sensors/gps/gps/fix", 1, &Vehicle::vehicleBGPSCallback, this);
-    
+
     data_packet_sub_ = nh_.subscribe("/data_packet", 1, &Vehicle::dataPacketCallback, this);
 
     l_thrust_.data = 0;
@@ -102,9 +101,9 @@ void Vehicle::mainFunction(void)
     std::cout << "localised" << std::endl;
 
     std::cout << "gps_x" << distance_to_goal.at(0) << std::endl;
-    std::cout << "gps_y"<< distance_to_goal.at(1) << std::endl;
-    std::cout << "resultant_x"<< resultant_.at(0) << std::endl;
-    std::cout << "resultant_y"<< resultant_.at(1) << std::endl;
+    std::cout << "gps_y" << distance_to_goal.at(1) << std::endl;
+    std::cout << "resultant_x" << resultant_.at(0) << std::endl;
+    std::cout << "resultant_y" << resultant_.at(1) << std::endl;
 
     std::cout << "localised" << std::endl;
 
@@ -177,12 +176,12 @@ void Vehicle::publishDataPacket()
         // float timestamp = simulateRange();
         float range = simulateRange();
         float depth = 0; //since on surface
-        Blutonomy::data_packet msg; 
+        Blutonomy::data_packet msg;
         packet_number_++;
         if (packet_number_ == 0)
         {
             // Send range instead of timestamp for sim
-            // data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, POI_lattitude, POI_longitude, z};    
+            // data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, POI_lattitude, POI_longitude, z};
             msg.packet_number.data = packet_number_;
             msg.range.data = range;
             msg.speed_of_sound.data = speed_of_sound_;
@@ -194,16 +193,15 @@ void Vehicle::publishDataPacket()
         else if (packet_number_ >= 1)
         {
             // Send range instead of timestamp for sim
-            // data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, A_latitude_moved, A_longitude_moved};  
+            // data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, A_latitude_moved, A_longitude_moved};
             msg.packet_number.data = packet_number_;
             msg.range.data = range;
             msg.speed_of_sound.data = speed_of_sound_;
             msg.depth.data = 0;
             msg.A_latitude_moved.data = 0;
             msg.A_longitude_moved.data = 0;
-
         }
-        std::cout << "packet sent number: " << data_packet_.at(0) << std::endl;
+        std::cout << "packet sent number: " << msg.packet_number.data << std::endl;
 
         //ros publish datapacket
         data_packet_pub_.publish(msg);
@@ -212,21 +210,21 @@ void Vehicle::publishDataPacket()
 }
 
 //May need 2 callback
-void Vehicle::dataPacketCallback(const data_packet_msg_cpp::data_packet::ConstPtr& msg)
+void Vehicle::dataPacketCallback(const Blutonomy::data_packet::ConstPtr &msg)
 {
     data_packet_.clear();
-    if (packet_number == 0)
+    if (msg->packet_number.data == 0)
     {
         data_packet_ = {0};
     }
-    else if (packet_number == 1)
+    else if (msg->packet_number.data == 1)
     {
         // 1st Data Packet
         data_packet_ = {msg->packet_number.data, msg->range.data, msg->speed_of_sound.data, msg->depth.data, msg->POI_lattitude.data, msg->POI_longitude.data, msg->z.data};
         vehicle_A_GPS_history_.push_back(vehicle_A_GPS_);
         vehicle_B_GPS_history_.push_back(vehicle_B_GPS_);
     }
-    else if (packet_number >= 2)
+    else if (msg->packet_number.data >= 2)
     {
         // Other Data Packets
         data_packet_ = {msg->packet_number.data, msg->range.data, msg->speed_of_sound.data, msg->depth.data, msg->A_latitude_moved.data, msg->A_longitude_moved.data};
