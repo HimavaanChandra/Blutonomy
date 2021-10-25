@@ -7,6 +7,7 @@
 #include "std_msgs/String.h"
 #include "std_msgs/Float32.h"
 #include "std_msgs/Int64.h"
+#include "Blutonomy/data_packet.h"
 
 #include "tf/transform_datatypes.h"
 

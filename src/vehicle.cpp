@@ -91,14 +91,39 @@ void Vehicle::mainFunction(void)
 
     std::vector<double> goal = {resultant_.at(0) + vehicle_B_GPS_.at(0), resultant_.at(1) + vehicle_B_GPS_.at(1)};
 
-    std::vector<double> distance_to_goal;
+    std::vector<double> distance_to_goal = {(vehicle_A_GPS_.at(0) - vehicle_B_GPS_.at(0)) * lat_to_meters, (vehicle_A_GPS_.at(1) - vehicle_B_GPS_.at(1)) * long_to_meters};
     double distance_to_goal_mag = 1;
+    std::cout << "localised" << std::endl;
+    std::cout << "localised" << std::endl;
+
+    std::cout << "gps_x" << distance_to_goal.at(0) << std::endl;
+    std::cout << "gps_y"<< distance_to_goal.at(1) << std::endl;
+    std::cout << "resultant_x"<< resultant_.at(0) << std::endl;
+    std::cout << "resultant_y"<< resultant_.at(1) << std::endl;
+
+    std::cout << "localised" << std::endl;
 
     while (distance_to_goal_mag > 0.0001)
     {
-        distance_to_goal = {resultant_.at(0) - vehicle_B_GPS_.at(0), resultant_.at(1) - vehicle_B_GPS_.at(1)};
+        // distance_to_goal = {resultant_.at(0), resultant_.at(1)};
+        distance_to_goal = {(vehicle_A_GPS_.at(0) - vehicle_B_GPS_.at(0)) * lat_to_meters, (vehicle_A_GPS_.at(1) - vehicle_B_GPS_.at(1)) * long_to_meters};
         distance_to_goal_mag = sqrt(pow(distance_to_goal.at(0), 2) + pow(distance_to_goal.at(1), 2));
+        // distance_to_goal_mag = sqrt(pow(resultant_.at(0), 2) + pow(resultant_.at(1), 2));
+        // purePursuit(resultant_.at(0), distance_to_goal_mag);
         purePursuit(distance_to_goal.at(0), distance_to_goal_mag);
+
+        // std::cout << distance_to_goal_mag << std::endl;
+        // publishDataPacket();
+        // if (data_packet_.size() > 1)
+        // {
+        //     std::cout << "packet number: " << data_packet_.at(0) << std::endl;
+        //     if (data_packet_.at(0) > 1)
+        //     {
+        //         localisation();
+        //     }
+        // }
+        // std::cout << std::endl;
+        // std::this_thread::sleep_for(std::chrono::seconds(transmission_delay));
     }
 
     std::cout << "Program Completed" << std::endl;
@@ -108,7 +133,7 @@ double Vehicle::simulateRange(void)
 {
     double time_now = std::chrono::system_clock::now().time_since_epoch().count();
     //Range is wrong, need to convert to metres from longitude and lattitude
-    double range = std::sqrt(std::pow((vehicle_A_GPS_[0] - vehicle_B_GPS_[0])*lat_to_meters, 2) + std::pow((vehicle_A_GPS_[1] - vehicle_B_GPS_[1])*long_to_meters, 2));
+    double range = std::sqrt(std::pow((vehicle_A_GPS_[0] - vehicle_B_GPS_[0]) * lat_to_meters, 2) + std::pow((vehicle_A_GPS_[1] - vehicle_B_GPS_[1]) * long_to_meters, 2));
     double time_delta = range / speed_of_sound_;
     int int_time = time_delta * 1000;
     std::this_thread::sleep_for(std::chrono::milliseconds(int_time));
@@ -136,7 +161,7 @@ void Vehicle::publishDataPacket()
     //Vehicle A movement vector
     vehicle_A_GPS_history_.push_back(vehicle_A_GPS_);
     vehicle_B_GPS_history_.push_back(vehicle_B_GPS_);
-    std::cout << "gps history size: " << vehicle_A_GPS_history_.size()/2 << std::endl;
+    std::cout << "gps history size: " << vehicle_A_GPS_history_.size() / 2 << std::endl;
     std::vector<float> A_moved = explorationVehicleVector();
     if (A_moved.size() >= 2)
     {
@@ -147,15 +172,29 @@ void Vehicle::publishDataPacket()
         // float timestamp = simulateRange();
         float range = simulateRange();
         float depth = 0; //since on surface
-
-        std::vector<float> data_packet = {0};
-
+        Blutonomy::data_packet msg; 
+        
         if (packet_number_ == 0)
         {
             packet_number_++;
             // Send range instead of timestamp for sim
             // data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, POI_lattitude, POI_longitude, z};
             data_packet_ = {packet_number_, range, speed_of_sound_, depth, POI_lattitude, POI_longitude, z};
+            
+            
+            // msg.packet_number.data = 1;
+            // msg.x.data = 4;
+            // msg.y.data = 3;
+            // msg.z.data = 2;
+            // msg.timestamp.data = 1634532260266; //UNIX ???
+            // msg.speed_of_sound.data = 1500;
+            // msg.depth.data = 10;
+            // msg.distance_moved.data = 5;
+            // msg.direction_moved.data = 15;
+
+        // pub.publish(msg);
+        // ros::spinOnce();
+        // loop_rate.sleep();
         }
         else if (packet_number_ >= 1)
         {
@@ -163,6 +202,20 @@ void Vehicle::publishDataPacket()
             // Send range instead of timestamp for sim
             // data_packet_ = {packet_number_, timestamp, speed_of_sound_, depth, A_latitude_moved, A_longitude_moved};
             data_packet_ = {packet_number_, range, speed_of_sound_, depth, A_latitude_moved, A_longitude_moved};
+            
+            // msg.packet_number.data = 1;
+            // msg.x.data = 4;
+            // msg.y.data = 3;
+            // msg.z.data = 2;
+            // msg.timestamp.data = 1634532260266; //UNIX ???
+            // msg.speed_of_sound.data = 1500;
+            // msg.depth.data = 10;
+            // msg.distance_moved.data = 5;
+            // msg.direction_moved.data = 15;
+
+        // pub.publish(msg);
+        // ros::spinOnce();
+        // loop_rate.sleep();
         }
         std::cout << "packet sent number: " << data_packet_.at(0) << std::endl;
 
@@ -170,6 +223,7 @@ void Vehicle::publishDataPacket()
     }
 }
 
+//May need 2 callback
 void Vehicle::dataPacketCallback()
 {
     //Redo once message is constructed
@@ -227,10 +281,10 @@ std::vector<float> Vehicle::explorationVehicleVector(void)
     {
         //latitude
         float latitude = vehicle_A_GPS_history_.at(vector_size - 1).at(0) - vehicle_A_GPS_history_.at(vector_size - 2).at(0);
-        exploration_movement_vector.push_back(latitude*lat_to_meters);
+        exploration_movement_vector.push_back(latitude * lat_to_meters);
         //longitude
         float longitude = vehicle_A_GPS_history_.at(vector_size - 1).at(1) - vehicle_A_GPS_history_.at(vector_size - 2).at(1);
-        exploration_movement_vector.push_back(longitude*long_to_meters);
+        exploration_movement_vector.push_back(longitude * long_to_meters);
         std::cout << "latitude, longitude: " << latitude << ", " << longitude << std::endl;
     }
 
@@ -281,14 +335,14 @@ void Vehicle::localisation(void)
     {
         movement_vectors.erase(movement_vectors.begin());
     }
-        std::cout<<"yeet: "<<range_circles.size()<<std::endl;
+    std::cout << "yeet: " << range_circles.size() << std::endl;
 
     // Localise when 3 range circles and remove the oldest range circle if more than 3 availble
     if (range_circles.size() > number_of_distance_circles)
     {
         range_circles.erase(range_circles.begin());
 
-                std::cout<<"yeetspegeet:"<<std::endl;
+        std::cout << "yeetspegeet:" << std::endl;
 
         for (int i = 0; i < number_of_distance_circles - 1; i++)
         {
@@ -307,12 +361,12 @@ void Vehicle::localisation(void)
             // Push back solution 1 and 2 for each movement vector localisation. solutions .at(circle vector 1 or 2) .at(solution 1 or 2) . at(x or y)
             solutions.push_back(vectorLocalisation(net_vector, d1, d2));
         }
-        std::cout<<"yeetusspeegetus"<<std::endl;
+        std::cout << "yeetusspeegetus" << std::endl;
 
         double lowest_difference = 0;
         std::vector<int> lowest_index = {0, 0};
 
-        for (int i = 0; i < number_of_distance_circles-1; i++)
+        for (int i = 0; i < number_of_distance_circles - 1; i++)
         {
             for (int j = 0; j < 2; j++)
             {
@@ -337,7 +391,6 @@ void Vehicle::localisation(void)
 
         solutions.clear();
 
-
         resultant_ = {solution1.at(0) + solution2.at(0), solution1.at(1) + solution2.at(1)};
 
         localised_ = true;
@@ -349,30 +402,33 @@ void Vehicle::localisation(void)
     // [ x2, y2 ] = pol2cart(-theta + vector_angle, d1);
     // solution1 = [ -x1, -y1 ] + b1; % first solution for A1
     // solution2 = [-x2, -y2] + b1; % second solution for A1
-    std::cout << "Localisation function end, localised_: "<< localised_ << std::endl;
+    std::cout << "Localisation function end, localised_: " << localised_ << std::endl;
 }
 
 // centrDistance = latitude    Range = magnitude
 void Vehicle::purePursuit(double centreDistance, double range)
 {
+    ros::Rate loop_rate(10);
     // Calculating maximum angular velocity for velocity control
-    float gamma = (2 * std::sin(centreDistance)) / std::pow(range, 2);
-    float linear_velocity = 0.22;
-    //   double angular_velocity = linear_velocity * gamma * 5;
-    //   if (gamma < 0)
-    //   {
+    float gamma = ((2 * centreDistance) / std::pow(range, 2)) * 10;
+    float linear_velocity = 1;
+    double angular_velocity = linear_velocity * gamma * 5;
+    // if (gamma < 0)
+    // {
     //     if (angular_velocity < 0)
     //     {
-    //       angular_velocity = -angular_velocity;
+    //         gamma = -gamma;
+    //         angular_velocity = -angular_velocity;
     //     }
-    //   }
-    //   else
-    //   {
+    // }
+    // else
+    // {
     //     if (angular_velocity > 0)
     //     {
-    //       angular_velocity = -angular_velocity;
+    //         gamma = -gamma;
+    //         angular_velocity = -angular_velocity;
     //     }
-    //   }
+    // }
 
     if (linear_velocity > 1)
     {
@@ -396,6 +452,7 @@ void Vehicle::purePursuit(double centreDistance, double range)
     right_thrust_2_.publish(r_thrust_2_);
     right_thrust_angle_2_.publish(r_thrust_angle_2_);
 
+    loop_rate.sleep();
     // left_thrust_.publish(linear_velocity);
     // left_thrust_angle_.publish(gamma);
 

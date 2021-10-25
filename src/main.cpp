@@ -1,6 +1,5 @@
 #include "ros/ros.h"
 #include "vehicle.h"
-#include "communication.h"
 #include <thread>   
 
 int main(int argc, char **argv)
