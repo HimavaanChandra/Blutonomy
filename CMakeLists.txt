@@ -56,6 +56,7 @@ include_directories(
 add_executable(${PROJECT_NAME} src/main.cpp src/vehicle.cpp)
 add_executable(data_packet_pub src/data_packet_pub.cpp)
 add_executable(data_packet_sub src/data_packet_sub.cpp)
+add_executable(wamv_tf_publisher src/wamv_tf_publisher.cpp)
 
 ## Add cmake target dependencies of the executable
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -70,4 +71,6 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
  target_link_libraries(data_packet_sub
    ${catkin_LIBRARIES}
  )
-
+ target_link_libraries(wamv_tf_publisher
+   ${catkin_LIBRARIES}
+ )
