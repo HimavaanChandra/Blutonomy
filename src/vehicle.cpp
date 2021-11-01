@@ -3,6 +3,8 @@
 Vehicle::Vehicle(ros::NodeHandle nh) : nh_(nh)
 {
     //Publishers
+    marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
+
     lateral_thrust_ = nh_.advertise<std_msgs::Float32>("/wamv/thrusters/lateral_thrust_cmd", 1);
     lateral_thrust_angle_ = nh_.advertise<std_msgs::Float32>("/wamv/thrusters/lateral_thrust_angle", 1);
 
@@ -76,10 +78,17 @@ void Vehicle::mainFunction(void)
     std::this_thread::sleep_for(std::chrono::seconds(point_of_interest_delay));
     int transmission_delay = 5; // change back to 60 ------------------------------------------------
 
+    bool lock = false;
+
     while (!localised_)
     {
         std::cout << "localised while loop" << std::endl;
         publishDataPacket();
+        if (lock == false)
+        {
+            start_position_b = {vehicle_B_GPS_.at(0) * lat_to_meters, vehicle_B_GPS_.at(1) * long_to_meters};
+            lock = true;
+        }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         if (data_packet_.size() > 1)
         {
@@ -106,6 +115,66 @@ void Vehicle::mainFunction(void)
     std::cout << "resultant_y" << resultant_.at(1) << std::endl;
 
     std::cout << "localised" << std::endl;
+
+    // resultant_vector_marker_.markers[0]..header.frame_id = "base_link";
+    // resultant_vector_marker_.header.stamp = ros::Time();
+    // resultant_vector_marker_.ns = "my_namespace";
+    // resultant_vector_marker_.id = 0;
+    // resultant_vector_marker_.type = visualization_msgs::Marker::SPHERE;
+    // resultant_vector_marker_.action = visualization_msgs::Marker::ADD;
+    // resultant_vector_marker_.pose.position.x = 1;
+    // resultant_vector_marker_.pose.position.y = 1;
+    // resultant_vector_marker_.pose.position.z = 1;
+    // resultant_vector_marker_.pose.orientation.x = 0.0;
+    // resultant_vector_marker_.pose.orientation.y = 0.0;
+    // resultant_vector_marker_.pose.orientation.z = 0.0;
+    // resultant_vector_marker_.pose.orientation.w = 1.0;
+    // resultant_vector_marker_.scale.x = 1;
+    // resultant_vector_marker_.scale.y = 0.1;
+    // resultant_vector_marker_.scale.z = 0.1;
+    // resultant_vector_marker_.color.a = 1.0; // Don't forget to set the alpha!
+    // resultant_vector_marker_.color.r = 0.0;
+    // resultant_vector_marker_.color.g = 1.0;
+    // resultant_vector_marker_.color.b = 0.0;
+
+    resultant_vector_marker_.header.frame_id = "world";
+    resultant_vector_marker_.header.stamp = ros::Time();
+    // resultant_vector_marker_.ns = "my_namespace";
+    resultant_vector_marker_.id = 0;
+    resultant_vector_marker_.type = visualization_msgs::Marker::ARROW;
+    resultant_vector_marker_.action = visualization_msgs::Marker::ADD;
+    // resultant_vector_marker_.pose.position.x = vehicle_B_GPS_.at(0);
+    // resultant_vector_marker_.pose.position.y = vehicle_B_GPS_.at(1);
+    // resultant_vector_marker_.pose.position.z = 0;
+    resultant_vector_marker_.points.resize(2);
+    std::cout << (vehicle_B_GPS_.at(0) * lat_to_meters) << std::endl;
+    resultant_vector_marker_.points.at(0).y = (vehicle_B_GPS_.at(0) * lat_to_meters) - -0.004873130933023025;
+    resultant_vector_marker_.points.at(0).x = (vehicle_B_GPS_.at(1) * long_to_meters) - -0.85731770423149012;
+    resultant_vector_marker_.points.at(0).z = 0;
+    resultant_vector_marker_.points.at(1).y = resultant_.at(0) + resultant_vector_marker_.points.at(0).y;
+    resultant_vector_marker_.points.at(1).x = resultant_.at(1) + resultant_vector_marker_.points.at(0).x;
+    resultant_vector_marker_.points.at(1).z = 0;
+    // resultant_vector_marker_.pose.orientation.x = 0.0;
+    // resultant_vector_marker_.pose.orientation.y = 0.0;
+    // resultant_vector_marker_.pose.orientation.z = 0.0;
+    // resultant_vector_marker_.pose.orientation.w = 1.0;
+    resultant_vector_marker_.scale.x = 1;
+    resultant_vector_marker_.scale.y = 0.1;
+    resultant_vector_marker_.scale.z = 0.1;
+    resultant_vector_marker_.color.a = 1.0; // Don't forget to set the alpha!
+    resultant_vector_marker_.color.r = 0.0;
+    resultant_vector_marker_.color.g = 1.0;
+    resultant_vector_marker_.color.b = 0.0;
+    // marker_array_.resize(1);
+    marker_array_.markers.push_back(resultant_vector_marker_);
+
+    for (int i = 0; i < 2; i++)
+    {
+        marker_pub_.publish(marker_array_);
+    }
+
+    std::cout << "x:" << resultant_vector_marker_.points.at(0).x << std::endl;
+    std::cout << "y:" << resultant_vector_marker_.points.at(0).y << std::endl;
 
     while (distance_to_goal_mag > 0.0001)
     {
@@ -163,8 +232,10 @@ void Vehicle::publishDataPacket()
     float z = 0;
 
     //Vehicle A movement vector
+    mutex_.lock();
     vehicle_A_GPS_history_.push_back(vehicle_A_GPS_);
     vehicle_B_GPS_history_.push_back(vehicle_B_GPS_);
+    mutex_.unlock();
     std::cout << "gps history size: " << vehicle_A_GPS_history_.size() / 2 << std::endl;
     std::vector<float> A_moved = explorationVehicleVector();
     if (A_moved.size() >= 2)
@@ -213,6 +284,7 @@ void Vehicle::publishDataPacket()
 //May need 2 callback
 void Vehicle::dataPacketCallback(const Blutonomy::data_packet::ConstPtr &msg)
 {
+    // mutex_.lock();
     data_packet_.clear();
     if (msg->packet_number.data == 0)
     {
@@ -222,16 +294,17 @@ void Vehicle::dataPacketCallback(const Blutonomy::data_packet::ConstPtr &msg)
     {
         // 1st Data Packet
         data_packet_ = {msg->packet_number.data, msg->range.data, msg->speed_of_sound.data, msg->depth.data, msg->POI_lattitude.data, msg->POI_longitude.data, msg->z.data};
-        vehicle_A_GPS_history_.push_back(vehicle_A_GPS_);
-        vehicle_B_GPS_history_.push_back(vehicle_B_GPS_);
+        // vehicle_A_GPS_history_.push_back(vehicle_A_GPS_);
+        // vehicle_B_GPS_history_.push_back(vehicle_B_GPS_);
     }
     else if (msg->packet_number.data >= 2)
     {
         // Other Data Packets
         data_packet_ = {msg->packet_number.data, msg->range.data, msg->speed_of_sound.data, msg->depth.data, msg->A_latitude_moved.data, msg->A_longitude_moved.data};
-        vehicle_A_GPS_history_.push_back(vehicle_A_GPS_);
-        vehicle_B_GPS_history_.push_back(vehicle_B_GPS_);
+        // vehicle_A_GPS_history_.push_back(vehicle_A_GPS_);
+        // vehicle_B_GPS_history_.push_back(vehicle_B_GPS_);
     }
+    // mutex_.unlock();
 }
 
 void Vehicle::acknowledgement(void)
@@ -252,6 +325,7 @@ std::vector<float> Vehicle::explorationVehicleVector(void)
     exploration_movement_vector.clear();
     if (vector_size > 1)
     {
+        mutex_.lock();
         //latitude
         float latitude = vehicle_A_GPS_history_.at(vector_size - 1).at(0) - vehicle_A_GPS_history_.at(vector_size - 2).at(0);
         exploration_movement_vector.push_back(latitude * lat_to_meters);
@@ -259,6 +333,7 @@ std::vector<float> Vehicle::explorationVehicleVector(void)
         float longitude = vehicle_A_GPS_history_.at(vector_size - 1).at(1) - vehicle_A_GPS_history_.at(vector_size - 2).at(1);
         exploration_movement_vector.push_back(longitude * long_to_meters);
         std::cout << "latitude, longitude: " << latitude << ", " << longitude << std::endl;
+        mutex_.unlock();
     }
 
     return exploration_movement_vector;
@@ -347,7 +422,7 @@ void Vehicle::localisation(void)
                 // Start position of A1 + 1st vector comparing to the start position of A2
                 double vector_x = solutions.at(0).at(i).at(0) - solutions.at(1).at(j).at(0) + movement_vectors.at(0).at(0);
                 double vector_y = solutions.at(0).at(i).at(1) - solutions.at(1).at(j).at(1) + movement_vectors.at(0).at(1);
-                
+
                 std::cout << vector_x << std::endl;
                 std::cout << vector_y << std::endl;
 
@@ -367,13 +442,11 @@ void Vehicle::localisation(void)
         solutions.clear();
 
         // resultant_ = {solution1.at(0) + solution2.at(0), solution1.at(1) + solution2.at(1)};
-        resultant_ = {solution2.at(0), solution2.at(1)};
-
+        resultant_ = {solution2.at(0) + movement_vectors.at(1).at(0), solution2.at(1) + movement_vectors.at(1).at(1)};
 
         localised_ = true;
 
         range_circles.erase(range_circles.begin());
-
     }
     // v = v - (b2 - b1);
     // theta = acos((d1 ^ 2 + norm(v) ^ 2 - d2 ^ 2) / (2 * d1 * norm(v)));
@@ -447,16 +520,16 @@ void Vehicle::control()
 {
     lat_thrust_.data = 1;
 
-    // l_thrust_.data = 1;
-    // r_thrust_.data = 1;
-    l_thrust_.data = 0.3;
-    r_thrust_.data = 0.3;
+    l_thrust_.data = 1;
+    r_thrust_.data = 1;
+    // l_thrust_.data = 0.3;
+    // r_thrust_.data = 0.3;
 
-    // l_thrust_angle_.data = 0.1;
-    // r_thrust_angle_.data = 0.1;
-    l_thrust_angle_.data = 0;
-    r_thrust_angle_.data = 0;
-    
+    l_thrust_angle_.data = 0.1;
+    r_thrust_angle_.data = 0.1;
+    // l_thrust_angle_.data = 0;
+    // r_thrust_angle_.data = 0;
+
     double increment;
     double increment2 = 0.1;
 

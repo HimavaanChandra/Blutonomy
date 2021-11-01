@@ -41,7 +41,7 @@ Visualization Manager:
     - Alpha: 0.5
       Cell Size: 10
       Class: rviz/Grid
-      Color: 160; 160; 164
+      Color: 0; 0; 0
       Enabled: true
       Line Style:
         Line Width: 0.029999999329447746
@@ -54,7 +54,7 @@ Visualization Manager:
         Z: 0
       Plane: XY
       Plane Cell Count: 10
-      Reference Frame: <Fixed Frame>
+      Reference Frame: world
       Value: true
     - Alpha: 1
       Class: rviz/RobotModel
@@ -186,9 +186,17 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: visualization_marker_array
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 114; 159; 207
     Default Light: true
     Fixed Frame: world
     Frame Rate: 30
@@ -214,7 +222,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 675.4299926757812
+      Distance: 182.3365020751953
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -222,17 +230,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 102.33269500732422
-        Y: -6.33839225769043
-        Z: 0
+        X: -25.766345977783203
+        Y: 20.220684051513672
+        Z: 4.302014713175595e-05
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5697963237762451
+      Pitch: 0.5247972011566162
       Target Frame: <Fixed Frame>
-      Yaw: 6.27858304977417
+      Yaw: 3.4303908348083496
     Saved: ~
 Window Geometry:
   Displays:
@@ -250,5 +258,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1848
-  X: 72
+  X: 1992
   Y: 27

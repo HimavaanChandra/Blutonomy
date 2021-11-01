@@ -6,8 +6,10 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "std_msgs/Float32.h"
+#include "std_msgs/Float32.h"
 #include "std_msgs/Int64.h"
 #include "Blutonomy/data_packet.h"
+#include "visualization_msgs/MarkerArray.h"
 
 #include "tf/transform_datatypes.h"
 
@@ -26,6 +28,7 @@
 #include <chrono>
 #include <random>
 #include <thread>
+#include <mutex>
 
 class Vehicle
 {
@@ -62,6 +65,10 @@ private:
     std_msgs::Float32 l_thrust_angle_;
     std_msgs::Float32 r_thrust_angle_;
 
+    visualization_msgs::Marker resultant_vector_marker_;
+    visualization_msgs::MarkerArray marker_array_;
+    
+    ros::Publisher marker_pub_;
 
     ros::Publisher lateral_thrust_2_;
     ros::Publisher lateral_thrust_angle_2_;
@@ -103,7 +110,9 @@ private:
     std::vector<std::vector<std::vector<float>>> solutions;
     double difference;
     std::vector<double> resultant_;
+    std::vector<double> start_position_b;
     bool localised_;
+    std::mutex mutex_;
 
     double rangeCalc(double time_sent);
     double simulateRange(void);
