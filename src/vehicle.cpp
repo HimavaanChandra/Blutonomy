@@ -344,9 +344,9 @@ void Vehicle::localisation(void)
             {
 
                 // diffs(i,j) = norm((A1(i,:) + A1_A2) - A2(j,:))
-                // Solutions .at(circle vector 1 or 2) .at(solution 1 or 2) . at(x or y)
-                double vector_x = solutions.at(0).at(i).at(0) - solutions.at(1).at(j).at(0) + (range_circles.at(1)-range_circles.at(0));
-                double vector_y = solutions.at(0).at(i).at(1) - solutions.at(1).at(j).at(1) + (range_circles.at(1)-range_circles.at(0));
+                // Start position of A1 + 1st vector comparing to the start position of A2
+                double vector_x = solutions.at(0).at(i).at(0) - solutions.at(1).at(j).at(0) + movement_vectors.at(0).at(0);
+                double vector_y = solutions.at(0).at(i).at(1) - solutions.at(1).at(j).at(1) + movement_vectors.at(0).at(1);
                 
                 std::cout << vector_x << std::endl;
                 std::cout << vector_y << std::endl;
@@ -366,7 +366,9 @@ void Vehicle::localisation(void)
 
         solutions.clear();
 
-        resultant_ = {solution1.at(0) + solution2.at(0), solution1.at(1) + solution2.at(1)};
+        // resultant_ = {solution1.at(0) + solution2.at(0), solution1.at(1) + solution2.at(1)};
+        resultant_ = {solution2.at(0), solution2.at(1)};
+
 
         localised_ = true;
 
