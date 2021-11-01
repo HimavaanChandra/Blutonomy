@@ -1,7 +1,7 @@
 #include "ros/ros.h"
-#include "data_packet_msg_cpp/data_packet.h"
+#include "Blutonomy/data_packet.h"
 
-void dataPacketCallback(const data_packet_msg_cpp::data_packet::ConstPtr& msg) {
+void dataPacketCallback(const Blutonomy::data_packet::ConstPtr& msg) {
     ROS_INFO("Data Packet #[%f]", msg->packet_number.data);
 }
 

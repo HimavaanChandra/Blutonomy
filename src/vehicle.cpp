@@ -84,7 +84,7 @@ void Vehicle::mainFunction(void)
         if (data_packet_.size() > 1)
         {
             std::cout << "packet number: " << data_packet_.at(0) << std::endl;
-            if (data_packet_.at(0) > 1)
+            if (data_packet_.at(0) > 0)
             {
                 localisation();
             }
@@ -311,9 +311,8 @@ void Vehicle::localisation(void)
     // std::cout << "yeet: " << range_circles.size() << std::endl;
 
     // Localise when 3 range circles and remove the oldest range circle if more than 3 availble
-    if (range_circles.size() > number_of_distance_circles)
+    if (range_circles.size() >= number_of_distance_circles)
     {
-        range_circles.erase(range_circles.begin());
 
         // std::cout << "yeetspegeet:" << std::endl;
 
@@ -370,6 +369,9 @@ void Vehicle::localisation(void)
         resultant_ = {solution1.at(0) + solution2.at(0), solution1.at(1) + solution2.at(1)};
 
         localised_ = true;
+
+        range_circles.erase(range_circles.begin());
+
     }
     // v = v - (b2 - b1);
     // theta = acos((d1 ^ 2 + norm(v) ^ 2 - d2 ^ 2) / (2 * d1 * norm(v)));

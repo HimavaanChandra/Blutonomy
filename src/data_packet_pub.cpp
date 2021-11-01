@@ -1,5 +1,5 @@
 #include "ros/ros.h"
-#include "data_packet_msg_cpp/data_packet.h"
+#include "Blutonomy/data_packet.h"
 
 #include <ctime>
 #include <chrono>
@@ -10,13 +10,13 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "data_packet_node");
     ros::NodeHandle n;
 
-    ros::Publisher pub = n.advertise<data_packet_msg_cpp::data_packet>("data_packet_node", 100);
+    ros::Publisher pub = n.advertise<Blutonomy::data_packet>("data_packet_node", 100);
     
     ros::Rate loop_rate(10);
 
     while (ros::ok())
     {
-        data_packet_msg_cpp::data_packet msg;
+        Blutonomy::data_packet msg;
 
         // Example values 
         msg.packet_number.data = 1;
