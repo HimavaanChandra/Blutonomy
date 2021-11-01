@@ -159,8 +159,8 @@ void Vehicle::mainFunction(void)
     // resultant_vector_marker_.pose.orientation.z = 0.0;
     // resultant_vector_marker_.pose.orientation.w = 1.0;
     resultant_vector_marker_.scale.x = 1;
-    resultant_vector_marker_.scale.y = 0.1;
-    resultant_vector_marker_.scale.z = 0.1;
+    resultant_vector_marker_.scale.y = 3;
+    resultant_vector_marker_.scale.z = 6;
     resultant_vector_marker_.color.a = 1.0; // Don't forget to set the alpha!
     resultant_vector_marker_.color.r = 0.0;
     resultant_vector_marker_.color.g = 1.0;
