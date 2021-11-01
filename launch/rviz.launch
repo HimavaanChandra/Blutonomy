@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+    <!--publish world to robot TF transforms-->
+    <node name="wamv_tf_publisher" pkg="Blutonomy" type="wamv_tf_publisher"/>
+
+    <!-- convert joint states to TF transforms for rviz -->
+    <node name="wamv_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"
+        respawn="false" output="screen" ns="wamv">
+    </node>
+    <node name="wamv2_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"
+        respawn="false" output="screen" ns="wamv2">
+    </node>
+
+    <!-- rviz config -->
+    <arg name="rvizconfig" default="$(find Blutonomy)/rviz/config.rviz" />
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+
+</launch>
