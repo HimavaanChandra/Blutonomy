@@ -10,6 +10,7 @@ Panels:
         - /RobotModel1/Links1
         - /RobotModel1/Links1/wamv/base_link1
         - /RobotModel2/Links1
+        - /Marker1
       Splitter Ratio: 0.5
     Tree Height: 719
   - Class: rviz/Selection
@@ -194,6 +195,14 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: visualization_marker
+      Name: Marker
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 114; 159; 207
@@ -222,7 +231,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 182.3365020751953
+      Distance: 150.95921325683594
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -230,17 +239,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -25.766345977783203
-        Y: 20.220684051513672
+        X: -16.620494842529297
+        Y: -11.392971992492676
         Z: 4.302014713175595e-05
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5247972011566162
+      Pitch: 0.6147972345352173
       Target Frame: <Fixed Frame>
-      Yaw: 3.4303908348083496
+      Yaw: 5.215391635894775
     Saved: ~
 Window Geometry:
   Displays:
@@ -258,5 +267,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1848
-  X: 1992
+  X: 72
   Y: 27
