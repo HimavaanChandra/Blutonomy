@@ -99,7 +99,7 @@ void Vehicle::mainFunction(void)
             }
         }
         std::cout << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(transmission_delay));
+        if (!localised_) std::this_thread::sleep_for(std::chrono::seconds(transmission_delay));
     }
 
     std::vector<double> goal = {resultant_.at(0) + vehicle_B_GPS_.at(0), resultant_.at(1) + vehicle_B_GPS_.at(1)};
@@ -116,27 +116,7 @@ void Vehicle::mainFunction(void)
 
     std::cout << "localised" << std::endl;
 
-    // resultant_vector_marker_.markers[0]..header.frame_id = "base_link";
-    // resultant_vector_marker_.header.stamp = ros::Time();
-    // resultant_vector_marker_.ns = "my_namespace";
-    // resultant_vector_marker_.id = 0;
-    // resultant_vector_marker_.type = visualization_msgs::Marker::SPHERE;
-    // resultant_vector_marker_.action = visualization_msgs::Marker::ADD;
-    // resultant_vector_marker_.pose.position.x = 1;
-    // resultant_vector_marker_.pose.position.y = 1;
-    // resultant_vector_marker_.pose.position.z = 1;
-    // resultant_vector_marker_.pose.orientation.x = 0.0;
-    // resultant_vector_marker_.pose.orientation.y = 0.0;
-    // resultant_vector_marker_.pose.orientation.z = 0.0;
-    // resultant_vector_marker_.pose.orientation.w = 1.0;
-    // resultant_vector_marker_.scale.x = 1;
-    // resultant_vector_marker_.scale.y = 0.1;
-    // resultant_vector_marker_.scale.z = 0.1;
-    // resultant_vector_marker_.color.a = 1.0; // Don't forget to set the alpha!
-    // resultant_vector_marker_.color.r = 0.0;
-    // resultant_vector_marker_.color.g = 1.0;
-    // resultant_vector_marker_.color.b = 0.0;
-
+    // publish marker
     resultant_vector_marker_.header.frame_id = "world";
     resultant_vector_marker_.header.stamp = ros::Time();
     // resultant_vector_marker_.ns = "my_namespace";
@@ -440,6 +420,53 @@ void Vehicle::localisation(void)
         std::vector<float> solution2 = solutions.at(1).at(lowest_index.at(1));
 
         solutions.clear();
+
+        // push back markers
+        visualization_msgs::Marker vector1;
+        vector1.header.frame_id = "world";
+        vector1.header.stamp = ros::Time();
+        // resultant_vector_marker_.ns = "my_namespace";
+        vector1.id = 1;
+        vector1.type = visualization_msgs::Marker::ARROW;
+        vector1.action = visualization_msgs::Marker::ADD;
+        vector1.points.resize(2);
+        vector1.points.at(0).y = (solution1.at(0));
+        vector1.points.at(0).x = (solution1.at(1));
+        vector1.points.at(0).z = 0;
+        vector1.points.at(1).y = (solution1.at(0) + movement_vectors.at(0).at(0));
+        vector1.points.at(1).x = (solution1.at(1) + movement_vectors.at(0).at(1));
+        vector1.points.at(1).z = 0;
+        vector1.scale.x = 1;
+        vector1.scale.y = 3;
+        vector1.scale.z = 6;
+        vector1.color.a = 1.0; // Don't forget to set the alpha!
+        vector1.color.r = 0.0;
+        vector1.color.g = 0.0;
+        vector1.color.b = 1.0;
+        marker_array_.markers.push_back(vector1);
+
+        visualization_msgs::Marker vector2;
+        vector2.header.frame_id = "world";
+        vector2.header.stamp = ros::Time();
+        // resultant_vector_marker_.ns = "my_namespace";
+        vector2.id = 2;
+        vector2.type = visualization_msgs::Marker::ARROW;
+        vector2.action = visualization_msgs::Marker::ADD;
+        vector2.points.resize(2);
+        vector2.points.at(0).y = (solution2.at(0));
+        vector2.points.at(0).x = (solution2.at(1));
+        vector2.points.at(0).z = 0;
+        vector2.points.at(1).y = (solution2.at(0) + movement_vectors.at(1).at(0));
+        vector2.points.at(1).x = (solution2.at(1) + movement_vectors.at(1).at(1));
+        vector2.points.at(1).z = 0;
+        vector2.scale.x = 1;
+        vector2.scale.y = 3;
+        vector2.scale.z = 6;
+        vector2.color.a = 1.0; // Don't forget to set the alpha!
+        vector2.color.r = 0.0;
+        vector2.color.g = 0.0;
+        vector2.color.b = 1.0;
+        marker_array_.markers.push_back(vector2);
 
         // resultant_ = {solution1.at(0) + solution2.at(0), solution1.at(1) + solution2.at(1)};
         resultant_ = {solution2.at(0) + movement_vectors.at(1).at(0), solution2.at(1) + movement_vectors.at(1).at(1)};
