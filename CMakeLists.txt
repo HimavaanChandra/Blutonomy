@@ -54,7 +54,7 @@ include_directories(
 
 
 ## Declare a C++ executable
-add_executable(${PROJECT_NAME} src/main.cpp src/vehicle.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/vehicle.cpp src/marker_helper.cpp)
 # add_executable(data_packet_pub src/data_packet_pub.cpp)
 # add_executable(data_packet_sub src/data_packet_sub.cpp)
 add_executable(wamv_tf_publisher src/wamv_tf_publisher.cpp)

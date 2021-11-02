@@ -30,6 +30,8 @@
 #include <thread>
 #include <mutex>
 
+#include "marker_helper.h"
+
 class Vehicle
 {
 public:

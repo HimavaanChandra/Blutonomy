@@ -120,7 +120,7 @@ void Vehicle::mainFunction(void)
     resultant_vector_marker_.header.frame_id = "world";
     resultant_vector_marker_.header.stamp = ros::Time();
     // resultant_vector_marker_.ns = "my_namespace";
-    resultant_vector_marker_.id = 0;
+    resultant_vector_marker_.id = marker_array_.markers.size();
     resultant_vector_marker_.type = visualization_msgs::Marker::ARROW;
     resultant_vector_marker_.action = visualization_msgs::Marker::ADD;
     // resultant_vector_marker_.pose.position.x = vehicle_B_GPS_.at(0);
@@ -426,7 +426,7 @@ void Vehicle::localisation(void)
         vector1.header.frame_id = "world";
         vector1.header.stamp = ros::Time();
         // resultant_vector_marker_.ns = "my_namespace";
-        vector1.id = 1;
+        vector1.id = marker_array_.markers.size();
         vector1.type = visualization_msgs::Marker::ARROW;
         vector1.action = visualization_msgs::Marker::ADD;
         vector1.points.resize(2);
@@ -439,7 +439,7 @@ void Vehicle::localisation(void)
         vector1.scale.x = 1;
         vector1.scale.y = 3;
         vector1.scale.z = 6;
-        vector1.color.a = 1.0; // Don't forget to set the alpha!
+        vector1.color.a = 1.0;
         vector1.color.r = 0.0;
         vector1.color.g = 0.0;
         vector1.color.b = 1.0;
@@ -449,7 +449,7 @@ void Vehicle::localisation(void)
         vector2.header.frame_id = "world";
         vector2.header.stamp = ros::Time();
         // resultant_vector_marker_.ns = "my_namespace";
-        vector2.id = 2;
+        vector2.id = marker_array_.markers.size();
         vector2.type = visualization_msgs::Marker::ARROW;
         vector2.action = visualization_msgs::Marker::ADD;
         vector2.points.resize(2);
@@ -462,11 +462,22 @@ void Vehicle::localisation(void)
         vector2.scale.x = 1;
         vector2.scale.y = 3;
         vector2.scale.z = 6;
-        vector2.color.a = 1.0; // Don't forget to set the alpha!
+        vector2.color.a = 1.0;
         vector2.color.r = 0.0;
         vector2.color.g = 0.0;
         vector2.color.b = 1.0;
         marker_array_.markers.push_back(vector2);
+
+        // circles
+        for (int i = 0; i < range_circles.size(); ++i)
+        {
+            // create circle marker
+            geometry_msgs::Point centre;
+            centre.y = vehicle_B_GPS_.at(0) *  lat_to_meters;
+            centre.x = vehicle_B_GPS_.at(1) *  long_to_meters;
+            visualization_msgs::Marker circle = MarkerHelper::generateCircle(range_circles.at(i), centre, marker_array_.markers.size());
+            marker_array_.markers.push_back(circle);
+        }
 
         // resultant_ = {solution1.at(0) + solution2.at(0), solution1.at(1) + solution2.at(1)};
         resultant_ = {solution2.at(0) + movement_vectors.at(1).at(0), solution2.at(1) + movement_vectors.at(1).at(1)};
