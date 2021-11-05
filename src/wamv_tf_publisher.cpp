@@ -35,7 +35,7 @@ int main(int argc, char **argv)
     _marker.id = 0;
     _marker.type = visualization_msgs::Marker::LINE_STRIP;
     _marker.action = visualization_msgs::Marker::ADD;
-    _marker.scale.x = 0.1;
+    _marker.scale.x = 0.5;
     _marker.color.a = 1.0;
     _marker.color.r = 1.0;
     _marker.color.g = 0.0;
