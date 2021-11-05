@@ -76,10 +76,9 @@ void Vehicle::mainFunction(void)
     // Wait a certain (possibly random) amount of time before finding point of interest
     int point_of_interest_delay = 5;
     std::this_thread::sleep_for(std::chrono::seconds(point_of_interest_delay));
-    int transmission_delay = 5; // change back to 60 ------------------------------------------------
+    int transmission_delay = 30; // change back to 60 ------------------------------------------------
 
     bool lock = false;
-
     while (!localised_)
     {
         std::cout << "localised while loop" << std::endl;
