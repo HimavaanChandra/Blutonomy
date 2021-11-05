@@ -84,8 +84,10 @@ void Vehicle::mainFunction(void)
     {
         std::cout << "localised while loop" << std::endl;
         publishDataPacket();
+
         if (lock == false)
         {
+            // store the starting position of vehicle B
             start_position_b = {vehicle_B_GPS_.at(0) * lat_to_meters, vehicle_B_GPS_.at(1) * long_to_meters};
             lock = true;
         }
@@ -98,6 +100,10 @@ void Vehicle::mainFunction(void)
                 localisation();
             }
         }
+
+        // publish rviz markers
+        marker_pub_.publish(marker_array_);
+        
         std::cout << std::endl;
         if (!localised_) std::this_thread::sleep_for(std::chrono::seconds(transmission_delay));
     }
@@ -252,6 +258,14 @@ void Vehicle::publishDataPacket()
             msg.depth.data = 0;
             msg.A_latitude_moved.data = A_latitude_moved;
             msg.A_longitude_moved.data = A_longitude_moved;
+
+            // TODO: publish range circle and vector markers to rviz
+            // create circle marker
+            geometry_msgs::Point centre;
+            centre.y = vehicle_B_GPS_.at(0) *  lat_to_meters;
+            centre.x = vehicle_B_GPS_.at(1) *  long_to_meters;
+            visualization_msgs::Marker circle = MarkerHelper::generateCircle(range, centre, marker_array_.markers.size());
+            marker_array_.markers.push_back(circle);
         }
         std::cout << "packet sent number: " << msg.packet_number.data << std::endl;
 
@@ -299,7 +313,7 @@ void Vehicle::acknowledgement(void)
 std::vector<float> Vehicle::explorationVehicleVector(void)
 {
     //Vehicle A movement vector, function name check
-    //pGet last 2 gps points
+    //Get last 2 gps points
     int vector_size = vehicle_A_GPS_history_.size();
     std::vector<float> exploration_movement_vector;
     exploration_movement_vector.clear();
@@ -325,6 +339,13 @@ std::vector<std::vector<float>> Vehicle::vectorLocalisation(std::vector<float> n
     double net_vector_mag = sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2) /*, pow(net_vector.at(2), 2)*/);
 
     double theta = acos((pow(d1, 2) + pow(net_vector_mag, 2) - pow(d2, 2)) / (2 * d1 * net_vector_mag));
+    // slight errors can cause theta to return nan if Vehicle A moves normal to the distance circle
+    if (isnan(theta))
+    {
+        std::cout << "corrected nan values" << std::endl;
+        theta = M_PI;
+    }
+
     double vector_angle = atan2(net_vector.at(1), net_vector.at(0));
     // double vector_angle = 30;
 
@@ -348,8 +369,8 @@ void Vehicle::localisation(void)
 
     int number_of_distance_circles = 3;
 
-    solutions.clear();
-    net_vector.clear();
+    //solutions.clear();
+    //net_vector.clear();
 
     // Add the most recent distance circle
     // range_circles.push_back(rangeCalc(data_packet_.at(1)));
@@ -365,34 +386,80 @@ void Vehicle::localisation(void)
     }
     // std::cout << "yeet: " << range_circles.size() << std::endl;
 
+    // if we have 2 or more distance circles, find the two solutions for the vectors
+    if (range_circles.size() > 1)
+    {
+        // explore_vector = movement_vector.at(i);
+        // net_vector = explore_vector - investigation_vector;
+
+        //  Net vector combin vehicle A and B movement vectors
+        net_vector = movement_vectors.back();
+        // net_vector_mag.push_back(sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2)/*, pow(net_vector.at(2), 2)*/));
+
+        // Radius from vehicle B to Vehicle A circles 1 and 2
+        double d1 = range_circles.at(range_circles.size()-2); // second last distance reading
+        double d2 = range_circles.back(); // last distance reading
+
+        // Push back solution 1 and 2 for each movement vector localisation. solutions .at(circle vector 1 or 2) .at(solution 1 or 2) . at(x or y)
+        solutions.push_back(vectorLocalisation(net_vector, d1, d2));
+        std::cout << "solution vector size: " << solutions.size() << ", " << solutions.at(0).size() << ", " << solutions.at(0).at(0).size() << std::endl;
+
+        //double vector_x = solutions.at(0).at(i).at(0) - solutions.at(1).at(j).at(0) + movement_vectors.at(0).at(0);
+        //double vector_y = solutions.at(0).at(i).at(1) - solutions.at(1).at(j).at(1) + movement_vectors.at(0).at(1);
+
+        // markers for possible solutions
+        for(int i = 0; i < 2; ++i)
+        {
+            visualization_msgs::Marker vec;
+            vec.header.frame_id = "world";
+            vec.header.stamp = ros::Time();
+            // resultant_vector_marker_.ns = "my_namespace";
+            vec.id = marker_array_.markers.size();
+            vec.type = visualization_msgs::Marker::ARROW;
+            vec.action = visualization_msgs::Marker::ADD;
+            vec.points.resize(2);
+            vec.points.at(0).y = solutions.back().at(i).at(0) + (vehicle_B_GPS_.at(0) * lat_to_meters);
+            vec.points.at(0).x = solutions.back().at(i).at(1) + (vehicle_B_GPS_.at(1) * long_to_meters);
+            vec.points.at(0).z = 0;
+            vec.points.at(1).y = vec.points.at(0).y  + movement_vectors.back().at(0);
+            vec.points.at(1).x = vec.points.at(0).x  + movement_vectors.back().at(1);
+            vec.points.at(1).z = 0;
+            vec.scale.x = 1;
+            vec.scale.y = 3;
+            vec.scale.z = 6;
+            vec.color.a = 1.0;
+            vec.color.r = 0.0;
+            vec.color.g = 0.5;
+            vec.color.b = 1.0;
+            marker_array_.markers.push_back(vec);
+        }
+    }
+
     // Localise when 3 range circles and remove the oldest range circle if more than 3 availble
     if (range_circles.size() >= number_of_distance_circles)
     {
 
-        // std::cout << "yeetspegeet:" << std::endl;
+        // for (int i = 0; i < number_of_distance_circles - 1; i++)
+        // {
 
-        for (int i = 0; i < number_of_distance_circles - 1; i++)
-        {
+        //     // explore_vector = movement_vector.at(i);
+        //     // net_vector = explore_vector - investigation_vector;
 
-            // explore_vector = movement_vector.at(i);
-            // net_vector = explore_vector - investigation_vector;
+        //     //  Net vector combin vehicle A and B movement vectors
+        //     net_vector = movement_vectors.at(i);
+        //     // net_vector_mag.push_back(sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2)/*, pow(net_vector.at(2), 2)*/));
 
-            //  Net vector combin vehicle A and B movement vectors
-            net_vector = movement_vectors.at(i);
-            // net_vector_mag.push_back(sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2)/*, pow(net_vector.at(2), 2)*/));
+        //     // Radius from vehicle B to Vehicle A circles 1 and 2
+        //     double d1 = range_circles.at(i);
+        //     double d2 = range_circles.at(i + 1);
 
-            // Radius from vehilce B to Vehicle A circles 1 and 2
-            double d1 = range_circles.at(i);
-            double d2 = range_circles.at(i + 1);
+        //     // Push back solution 1 and 2 for each movement vector localisation. solutions .at(circle vector 1 or 2) .at(solution 1 or 2) . at(x or y)
+        //     solutions.push_back(vectorLocalisation(net_vector, d1, d2));
+        // }
 
-            // Push back solution 1 and 2 for each movement vector localisation. solutions .at(circle vector 1 or 2) .at(solution 1 or 2) . at(x or y)
-            solutions.push_back(vectorLocalisation(net_vector, d1, d2));
-        }
-        // std::cout << "yeetusspeegetus" << std::endl;
-
+        // find the pair of vectors with the lowest error to connect them
         double lowest_difference = 0;
         std::vector<int> lowest_index = {0, 0};
-
         for (int i = 0; i < number_of_distance_circles - 1; i++)
         {
             for (int j = 0; j < 2; j++)
