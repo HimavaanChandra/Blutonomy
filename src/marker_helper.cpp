@@ -9,7 +9,7 @@ visualization_msgs::Marker MarkerHelper::generateCircle(double radius, geometry_
     marker.id = id;
     marker.type = visualization_msgs::Marker::LINE_STRIP;
     marker.action = visualization_msgs::Marker::ADD;
-    marker.scale.x = 0.1;
+    marker.scale.x = 0.5;
     marker.color.a = 1.0;
     marker.color.r = 0.0;
     marker.color.g = 0.0;
