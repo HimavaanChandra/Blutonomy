@@ -5,7 +5,7 @@
 1. Install and setup Ubuntu 20.04.
 2. Install and setup ROS Noetic.
 3. Install VRX simulator following GitHub repository instructions: https://github.com/osrf/vrx/wiki/host_install_tutorial
-4. Clone Blutonomy repository by opening the terminal window in vrx_ws/src folder 
+4. Clone Blutonomy repository by opening the terminal window in vrx_ws/src folder   
    ```git clone https://github.com/HimavaanChandra/Blutonomy.git ```
 
 ## Code Running Instructions
