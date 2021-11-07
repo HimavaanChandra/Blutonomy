@@ -37,6 +37,33 @@ Vehicle::Vehicle(ros::NodeHandle nh) : nh_(nh)
     r_thrust_.data = 0;
     packet_number_ = 0;
     localised_ = false;
+
+    // object of interest marker
+    object_of_interest_.x = -40;
+    object_of_interest_.y = 0;
+    object_of_interest_.z = -20;
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "world";
+    marker.header.stamp = ros::Time();
+    marker.id = 0;
+    marker.type = visualization_msgs::Marker::MESH_RESOURCE;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.position = object_of_interest_;
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = 0.1;
+    marker.scale.y = 0.1;
+    marker.scale.z = 0.1;
+    marker.color.a = 1;
+    marker.color.r = 0.6;
+    marker.color.g = 0.45;
+    marker.color.b = 0.25;
+    marker.mesh_resource = "package://Blutonomy/rviz/3DBenchy.stl";
+    marker_array_.markers.push_back(marker);
+    marker_pub_.publish(marker_array_);
+
 }
 
 void Vehicle::vehicleAGPSCallback(const sensor_msgs::NavSatFixConstPtr &msg)
@@ -76,7 +103,7 @@ void Vehicle::mainFunction(void)
     // Wait a certain (possibly random) amount of time before finding point of interest
     int point_of_interest_delay = 5;
     std::this_thread::sleep_for(std::chrono::seconds(point_of_interest_delay));
-    int transmission_delay = 30; // change back to 60 ------------------------------------------------
+    int transmission_delay = 5; // change back to 60 ------------------------------------------------
 
     bool lock = false;
     while (!localised_)
@@ -121,36 +148,14 @@ void Vehicle::mainFunction(void)
 
     std::cout << "localised" << std::endl;
 
-    // publish marker
-    resultant_vector_marker_.header.frame_id = "world";
-    resultant_vector_marker_.header.stamp = ros::Time();
-    // resultant_vector_marker_.ns = "my_namespace";
-    resultant_vector_marker_.id = marker_array_.markers.size();
-    resultant_vector_marker_.type = visualization_msgs::Marker::ARROW;
-    resultant_vector_marker_.action = visualization_msgs::Marker::ADD;
-    // resultant_vector_marker_.pose.position.x = vehicle_B_GPS_.at(0);
-    // resultant_vector_marker_.pose.position.y = vehicle_B_GPS_.at(1);
-    // resultant_vector_marker_.pose.position.z = 0;
-    resultant_vector_marker_.points.resize(2);
-    std::cout << (vehicle_B_GPS_.at(0) * lat_to_meters) << std::endl;
-    resultant_vector_marker_.points.at(0).y = (vehicle_B_GPS_.at(0) * lat_to_meters);
-    resultant_vector_marker_.points.at(0).x = (vehicle_B_GPS_.at(1) * long_to_meters);
-    resultant_vector_marker_.points.at(0).z = 0;
-    resultant_vector_marker_.points.at(1).y = resultant_.at(0) + resultant_vector_marker_.points.at(0).y;
-    resultant_vector_marker_.points.at(1).x = resultant_.at(1) + resultant_vector_marker_.points.at(0).x;
-    resultant_vector_marker_.points.at(1).z = 0;
-    // resultant_vector_marker_.pose.orientation.x = 0.0;
-    // resultant_vector_marker_.pose.orientation.y = 0.0;
-    // resultant_vector_marker_.pose.orientation.z = 0.0;
-    // resultant_vector_marker_.pose.orientation.w = 1.0;
-    resultant_vector_marker_.scale.x = 1;
-    resultant_vector_marker_.scale.y = 3;
-    resultant_vector_marker_.scale.z = 6;
-    resultant_vector_marker_.color.a = 1.0; // Don't forget to set the alpha!
-    resultant_vector_marker_.color.r = 0.0;
-    resultant_vector_marker_.color.g = 1.0;
-    resultant_vector_marker_.color.b = 0.0;
-    // marker_array_.resize(1);
+    // publish resultant vector marker
+    geometry_msgs::Point start, end;
+    start.y = vehicle_B_GPS_.at(0) * lat_to_meters;
+    start.x = vehicle_B_GPS_.at(1) * long_to_meters;
+    end.y = start.y + resultant_.at(0) + A_to_object_.y;
+    end.x = start.x + resultant_.at(1) + A_to_object_.x;
+    end.z = start.z + A_to_object_.z;
+    resultant_vector_marker_ = MarkerHelper::generateArrow(start, end, marker_array_.markers.size(), {0,1,0});
     marker_array_.markers.push_back(resultant_vector_marker_);
 
     for (int i = 0; i < 2; i++)
@@ -265,6 +270,22 @@ void Vehicle::publishDataPacket()
             centre.x = vehicle_B_GPS_.at(1) *  long_to_meters;
             visualization_msgs::Marker circle = MarkerHelper::generateCircle(range, centre, marker_array_.markers.size());
             marker_array_.markers.push_back(circle);
+
+            
+            if (packet_number_ == 1)
+            {
+                // if it's the first packet, publish marker to the object of interest
+                geometry_msgs::Point vehicle_A;
+                vehicle_A.y = vehicle_A_GPS_.at(0) * lat_to_meters;
+                vehicle_A.x = vehicle_A_GPS_.at(1) * long_to_meters;
+                visualization_msgs::Marker A_to_object = MarkerHelper::generateArrow(vehicle_A, object_of_interest_, marker_array_.markers.size(),{1,0.6,0});
+                marker_array_.markers.push_back(A_to_object);
+
+                // set the pose from A to the object of interest
+                A_to_object_.x = object_of_interest_.x - vehicle_A.x;
+                A_to_object_.y = object_of_interest_.y - vehicle_A.y;
+                A_to_object_.z = object_of_interest_.z - vehicle_A.z;
+            }
         }
         std::cout << "packet sent number: " << msg.packet_number.data << std::endl;
 
@@ -383,17 +404,12 @@ void Vehicle::localisation(void)
     {
         movement_vectors.erase(movement_vectors.begin());
     }
-    // std::cout << "yeet: " << range_circles.size() << std::endl;
 
     // if we have 2 or more distance circles, find the two solutions for the vectors
     if (range_circles.size() > 1)
     {
-        // explore_vector = movement_vector.at(i);
-        // net_vector = explore_vector - investigation_vector;
-
         //  Net vector combin vehicle A and B movement vectors
         net_vector = movement_vectors.back();
-        // net_vector_mag.push_back(sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2)/*, pow(net_vector.at(2), 2)*/));
 
         // Radius from vehicle B to Vehicle A circles 1 and 2
         double d1 = range_circles.at(range_circles.size()-2); // second last distance reading
@@ -403,33 +419,15 @@ void Vehicle::localisation(void)
         solutions.push_back(vectorLocalisation(net_vector, d1, d2));
         std::cout << "solution vector size: " << solutions.size() << ", " << solutions.at(0).size() << ", " << solutions.at(0).at(0).size() << std::endl;
 
-        //double vector_x = solutions.at(0).at(i).at(0) - solutions.at(1).at(j).at(0) + movement_vectors.at(0).at(0);
-        //double vector_y = solutions.at(0).at(i).at(1) - solutions.at(1).at(j).at(1) + movement_vectors.at(0).at(1);
-
         // markers for possible solutions
         for(int i = 0; i < 2; ++i)
         {
-            visualization_msgs::Marker vec;
-            vec.header.frame_id = "world";
-            vec.header.stamp = ros::Time();
-            // resultant_vector_marker_.ns = "my_namespace";
-            vec.id = marker_array_.markers.size();
-            vec.type = visualization_msgs::Marker::ARROW;
-            vec.action = visualization_msgs::Marker::ADD;
-            vec.points.resize(2);
-            vec.points.at(0).y = solutions.back().at(i).at(0) + (vehicle_B_GPS_.at(0) * lat_to_meters);
-            vec.points.at(0).x = solutions.back().at(i).at(1) + (vehicle_B_GPS_.at(1) * long_to_meters);
-            vec.points.at(0).z = 0;
-            vec.points.at(1).y = vec.points.at(0).y  + movement_vectors.back().at(0);
-            vec.points.at(1).x = vec.points.at(0).x  + movement_vectors.back().at(1);
-            vec.points.at(1).z = 0;
-            vec.scale.x = 1;
-            vec.scale.y = 3;
-            vec.scale.z = 6;
-            vec.color.a = 1.0;
-            vec.color.r = 0.0;
-            vec.color.g = 0.5;
-            vec.color.b = 1.0;
+            geometry_msgs::Point start, end;
+            start.y = solutions.back().at(i).at(0) + (vehicle_B_GPS_.at(0) * lat_to_meters);
+            start.x = solutions.back().at(i).at(1) + (vehicle_B_GPS_.at(1) * long_to_meters);
+            end.y = start.y + movement_vectors.back().at(0);
+            end.x = start.x + movement_vectors.back().at(1);
+            visualization_msgs::Marker vec = MarkerHelper::generateArrow(start, end, marker_array_.markers.size(), {0,0.6,1.0});
             marker_array_.markers.push_back(vec);
         }
     }
@@ -437,25 +435,6 @@ void Vehicle::localisation(void)
     // Localise when 3 range circles and remove the oldest range circle if more than 3 availble
     if (range_circles.size() >= number_of_distance_circles)
     {
-
-        // for (int i = 0; i < number_of_distance_circles - 1; i++)
-        // {
-
-        //     // explore_vector = movement_vector.at(i);
-        //     // net_vector = explore_vector - investigation_vector;
-
-        //     //  Net vector combin vehicle A and B movement vectors
-        //     net_vector = movement_vectors.at(i);
-        //     // net_vector_mag.push_back(sqrt(pow(net_vector.at(0), 2) + pow(net_vector.at(1), 2)/*, pow(net_vector.at(2), 2)*/));
-
-        //     // Radius from vehicle B to Vehicle A circles 1 and 2
-        //     double d1 = range_circles.at(i);
-        //     double d2 = range_circles.at(i + 1);
-
-        //     // Push back solution 1 and 2 for each movement vector localisation. solutions .at(circle vector 1 or 2) .at(solution 1 or 2) . at(x or y)
-        //     solutions.push_back(vectorLocalisation(net_vector, d1, d2));
-        // }
-
         // find the pair of vectors with the lowest error to connect them
         double lowest_difference = 0;
         std::vector<int> lowest_index = {0, 0};
@@ -488,50 +467,20 @@ void Vehicle::localisation(void)
         solutions.clear();
 
         // push back markers
-        visualization_msgs::Marker vector1;
-        vector1.header.frame_id = "world";
-        vector1.header.stamp = ros::Time();
-        // resultant_vector_marker_.ns = "my_namespace";
-        vector1.id = marker_array_.markers.size();
-        vector1.type = visualization_msgs::Marker::ARROW;
-        vector1.action = visualization_msgs::Marker::ADD;
-        vector1.points.resize(2);
-        vector1.points.at(0).y = solution1.at(0) + (vehicle_B_GPS_.at(0) * lat_to_meters);
-        vector1.points.at(0).x = solution1.at(1) + (vehicle_B_GPS_.at(1) * long_to_meters);
-        vector1.points.at(0).z = 0;
-        vector1.points.at(1).y = vector1.points.at(0).y  + movement_vectors.at(0).at(0);
-        vector1.points.at(1).x = vector1.points.at(0).x  + movement_vectors.at(0).at(1);
-        vector1.points.at(1).z = 0;
-        vector1.scale.x = 1;
-        vector1.scale.y = 3;
-        vector1.scale.z = 6;
-        vector1.color.a = 1.0;
-        vector1.color.r = 0.0;
-        vector1.color.g = 0.0;
-        vector1.color.b = 1.0;
+        geometry_msgs::Point start, end;
+        start.y = solution1.at(0) + (vehicle_B_GPS_.at(0) * lat_to_meters);
+        start.x = solution1.at(1) + (vehicle_B_GPS_.at(1) * long_to_meters);
+        end.y = start.y + movement_vectors.at(0).at(0);
+        end.x = start.x + movement_vectors.at(0).at(1);
+        visualization_msgs::Marker vector1 = MarkerHelper::generateArrow(start, end, marker_array_.markers.size(), {0.0,0.0,1.0});
         marker_array_.markers.push_back(vector1);
 
-        visualization_msgs::Marker vector2;
-        vector2.header.frame_id = "world";
-        vector2.header.stamp = ros::Time();
-        // resultant_vector_marker_.ns = "my_namespace";
-        vector2.id = marker_array_.markers.size();
-        vector2.type = visualization_msgs::Marker::ARROW;
-        vector2.action = visualization_msgs::Marker::ADD;
-        vector2.points.resize(2);
-        vector2.points.at(0).y = (solution2.at(0)) + (vehicle_B_GPS_.at(0) * lat_to_meters);
-        vector2.points.at(0).x = (solution2.at(1)) + (vehicle_B_GPS_.at(1) * long_to_meters);
-        vector2.points.at(0).z = 0;
-        vector2.points.at(1).y = vector2.points.at(0).y  + movement_vectors.at(1).at(0);
-        vector2.points.at(1).x = vector2.points.at(0).x  + movement_vectors.at(1).at(1);
-        vector2.points.at(1).z = 0;
-        vector2.scale.x = 1;
-        vector2.scale.y = 3;
-        vector2.scale.z = 6;
-        vector2.color.a = 1.0;
-        vector2.color.r = 0.0;
-        vector2.color.g = 0.0;
-        vector2.color.b = 1.0;
+        // second marker
+        start.y = (solution2.at(0)) + (vehicle_B_GPS_.at(0) * lat_to_meters);
+        start.x = (solution2.at(1)) + (vehicle_B_GPS_.at(1) * long_to_meters);
+        end.y = start.y  + movement_vectors.at(1).at(0);
+        end.x = start.x  + movement_vectors.at(1).at(1);
+        visualization_msgs::Marker vector2 = MarkerHelper::generateArrow(start, end, marker_array_.markers.size(), {0.0,0.0,1.0});
         marker_array_.markers.push_back(vector2);
 
         // circles
@@ -545,8 +494,8 @@ void Vehicle::localisation(void)
             marker_array_.markers.push_back(circle);
         }
 
-        // resultant_ = {solution1.at(0) + solution2.at(0), solution1.at(1) + solution2.at(1)};
-        resultant_ = {solution2.at(0) + movement_vectors.at(1).at(0), solution2.at(1) + movement_vectors.at(1).at(1)};
+        resultant_ = {solution1.at(0), solution1.at(1)};
+        // resultant_ = {solution2.at(0) + movement_vectors.at(1).at(0), solution2.at(1) + movement_vectors.at(1).at(1)};
 
         localised_ = true;
 
@@ -650,8 +599,8 @@ void Vehicle::control()
         // increment2 = (increment2)*inc/1.001;
         // increment = increment2 - 0.1;
 
-        l_thrust_angle_.data = l_thrust_angle_.data * (1 - (0.001 * l_thrust_angle_.data / 0.1)); // calculates current thrut angle as percentage of starting thrust angle, then calculates 0.001 (0.1%) of it. Therefore next thrust angle is 1- 0.001 = 99.9 percent of the previous.
-        r_thrust_angle_.data = r_thrust_angle_.data * (1 - (0.001 * r_thrust_angle_.data / 0.1));
+        l_thrust_angle_.data = l_thrust_angle_.data * (1 - (0.002 * l_thrust_angle_.data / 0.1)); // calculates current thrut angle as percentage of starting thrust angle, then calculates 0.001 (0.1%) of it. Therefore next thrust angle is 1- 0.001 = 99.9 percent of the previous.
+        r_thrust_angle_.data = r_thrust_angle_.data * (1 - (0.002 * r_thrust_angle_.data / 0.1));
 
         // l_thrust_angle_.data = l_thrust_angle_.data - 0.0001;
         // r_thrust_angle_.data = r_thrust_angle_.data - 0.0001;

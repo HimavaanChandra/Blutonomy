@@ -89,6 +89,8 @@ private:
     std_msgs::Float32 l_thrust_angle_2_;
     std_msgs::Float32 r_thrust_angle_2_;
 
+    geometry_msgs::Point object_of_interest_;
+    geometry_msgs::Point A_to_object_;
     const int speed_of_sound_ = 1500;
     const int lat_to_meters = 111139;
     const int long_to_meters = 111190;
