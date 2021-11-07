@@ -27,3 +27,24 @@ visualization_msgs::Marker MarkerHelper::generateCircle(double radius, geometry_
     }
     return marker;
 }
+
+visualization_msgs::Marker MarkerHelper::generateArrow(geometry_msgs::Point start, geometry_msgs::Point end, int id, std::vector<double> color)
+{
+    visualization_msgs::Marker arrow;
+    arrow.header.frame_id = "world";
+    arrow.header.stamp = ros::Time();
+    arrow.id = id;
+    arrow.type = visualization_msgs::Marker::ARROW;
+    arrow.action = visualization_msgs::Marker::ADD;
+    arrow.points.resize(2);
+    arrow.points.at(0) = start;
+    arrow.points.at(1) = end;
+    arrow.scale.x = 0.8;
+    arrow.scale.y = 2.5;
+    arrow.scale.z = 4;
+    arrow.color.a = 1.0;
+    arrow.color.r = color.at(0);
+    arrow.color.g = color.at(1);
+    arrow.color.b = color.at(2);
+    return arrow;
+}
