@@ -19,7 +19,7 @@
 
 
     <!-- Initial USV location and attitude-->
-    <arg name="x" default="-100" />
+    <arg name="x" default="-50" />
     <arg name="y" default="0" />
     <arg name="z" default="0.1" />
     <arg name="P" default="0" />
@@ -82,7 +82,7 @@
 
     <!-- Initial USV location and attitude-->
     <arg name="x2" default="0" />
-    <arg name="y2" default="0" />
+    <arg name="y2" default="25" />
     <arg name="z2" default="0" />
     <arg name="P2" default="0" />
     <arg name="R2" default="0" />
