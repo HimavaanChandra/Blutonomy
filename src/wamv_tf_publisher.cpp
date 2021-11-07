@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     geometry_msgs::TransformStamped wamvTransform;
     geometry_msgs::TransformStamped wamv2Transform;
 
-    // set marker data
+    // set marker data for Vehicle A trail
     _marker.header.frame_id = "world";
     _marker.header.stamp = ros::Time();
     _marker.id = 0;
