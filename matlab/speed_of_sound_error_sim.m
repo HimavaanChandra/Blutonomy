@@ -1,90 +1,90 @@
-v_max = 1.5;
-v = v_max/2; % assume travelling half of max speed
+v = 2.057778; % m/s
 T = 60; % 1 min between readings
+Ax = 500;
 d = T*v; % distance travelled between readings
 
-% assume B drift is negligible
+% assume B does not move
 B1_true = [0,0];
 B2_true = [0,0];
 B3_true = [0,0];
 
-% A positions
-Ax = 100;
-A1_true = [Ax,0];
-A2_true = [Ax+d/sqrt(2),d/sqrt(2)];
-A3_true = [Ax+2*d/sqrt(2),0];
-
 % error
 e_DVL = 0.001; % m/s
-e_compass = deg2rad(0.5); % rad
-v_sound = 1500; 
-
-% calculate A vectors
-A1_A2_true = A2_true - A1_true;
-A2_A3_true = A3_true - A2_true;
+e_compass = deg2rad(1); % rad
+e_temp_max = 3;
+temp = 20;
+salinity = 35;
+depth = 5;
+c_base = speed_of_sound(temp,salinity,depth);
 
 iterations = 1000;
-max_c_error = 50;
-e = zeros(iterations,max_c_error);
-for e_speed_of_sound = 0:max_c_error
-for x = 1:iterations
-    % add error
-    t1 = norm(A1_true - B1_true)/normrnd(v_sound,e_speed_of_sound);
-    t2 = norm(A2_true - B2_true)/normrnd(v_sound,e_speed_of_sound);
-    t3 = norm(A3_true - B3_true)/normrnd(v_sound,e_speed_of_sound);
-    A1_A2 = addError(A1_A2_true, e_compass, e_DVL*T);
-    A2_A3 = addError(A2_A3_true, e_compass, e_DVL*T);
+e_temp = 0:0.005:e_temp_max;
+e = zeros(iterations, size(e_temp,2));
+index = 1;
+for et = e_temp
+    et % print the current temperature error
 
-    D1 = v_sound*t1;
-    D2 = v_sound*t2;
-    D3 = v_sound*t3;
+    % A positions
+    A1_true = [Ax,0];
+    A2_true = [Ax+d/sqrt(2),d/sqrt(2)];
+    A3_true = [Ax+2*d/sqrt(2),0];
 
-    % calculate vector positions
-    [A11, A12] = vectorInCircles(A1_A2, D1, B1_true, D2, B2_true);
-    [A21, A22] = vectorInCircles(A2_A3, D2, B2_true, D3, B3_true);
+    % calculate A vectors
+    A1_A2_true = A2_true - A1_true;
+    A2_A3_true = A3_true - A2_true;
 
-    % the solution is where the tip of the first arrow most closely matches
-    % the base of the second arrow
-    A1 = [A11; A12];
-    A2 = [A21; A22];
-    diffs = zeros(2);
+    for x = 1:iterations
+        v_sound = [speed_of_sound(normrnd(temp,et),salinity,depth),...
+        speed_of_sound(normrnd(temp,et),salinity,depth),...
+        speed_of_sound(normrnd(temp,et),salinity,depth)];
+        
+        % add error
+        t1 = norm(A1_true - B1_true)/v_sound(1);
+        t2 = norm(A2_true - B2_true)/v_sound(2);
+        t3 = norm(A3_true - B3_true)/v_sound(3);
+        A1_A2 = addError(A1_A2_true, e_compass, e_DVL*T);
+        A2_A3 = addError(A2_A3_true, e_compass, e_DVL*T);
 
-    for i = 1:2
-        for j = 1:2
-            diffs(i,j) = norm((A1(i,:) + A1_A2) - A2(j,:));
+        D1 = c_base*t1;
+        D2 = c_base*t2;
+        D3 = c_base*t3;
+
+        % calculate vector positions
+        [A11, A12] = vectorInCircles(A1_A2, D1, B1_true, D2, B2_true);
+        [A21, A22] = vectorInCircles(A2_A3, D2, B2_true, D3, B3_true);
+
+        % the solution is where the tip of the first arrow most closely matches
+        % the base of the second arrow
+        A1 = [A11; A12];
+        A2 = [A21; A22];
+        diffs = zeros(2);
+
+        for i = 1:2
+            for j = 1:2
+                diffs(i,j) = norm((A1(i,:) + A1_A2) - A2(j,:));
+            end
         end
+
+        [error, idx] = min(diffs,[],'all','linear');
+        [row,col] = ind2sub(size(diffs),idx);
+
+        A1_error = norm(A1(row,:) - A1_true);
+        e(x,index) = A1_error;
     end
-
-    [error, idx] = min(diffs,[],'all','linear');
-    [row,col] = ind2sub(size(diffs),idx);
-
-    A3_error = norm(A2(col,:) + A2_A3 - A3_true);
-    e(x,e_speed_of_sound+1) = A3_error;
-    
-%     % plotting
-%     figure(1);
-%     clf(1);
-%     viscircles([B1_true; B2_true; B3_true],[D1, D2, D3],'LineWidth',1);
-%     axis equal
-%     hold on;
-%     plot([B1_true(1) B2_true(1) B3_true(1)],[B1_true(2) B2_true(2) B3_true(2)],'go');
-%     plot(A1_true(1), A1_true(2),'ro');
-%     plot(A2_true(1), A2_true(2),'ro');
-%     plot(A3_true(1), A3_true(2),'ro');
-%     
-%     quiver(A11(1), A11(2), A1_A2(1), A1_A2(2), 0,'b')
-%     quiver(A12(1), A12(2), A1_A2(1), A1_A2(2), 0,'b')
-%     
-%     quiver(A21(1), A21(2), A2_A3(1), A2_A3(2), 0,'g')
-%     quiver(A22(1), A22(2), A2_A3(1), A2_A3(2), 0,'g')
-%     
-%     plot(A1(row,1),A1(row,2),'kx')
-%     plot(A2(col,1),A2(col,2),'kx')
-%     pause();
-end
+    index = index+1;
 end
 
-plot(0:max_c_error, mean(e))
+%%
+plot(e_temp, mean(e),'b')
+title("Localisation error vs temperature estimation error (Vehicle distance 500m)");
+xlabel("Temperature estimation error (C)");
+ylabel("Average error (m)");
+%%
+hold on;
+onepercent = sort(e,'descend');
+onepercent = onepercent(1:0.01*iterations,:);
+plot(e_temp, mean(onepercent,1),'b:')
+legend(["Mean error","1% worst case error"]);
 
 function ve = addError(v, rotation_error, translation_error)
 [v_theta, v_r] = cart2pol(v(1), v(2));
