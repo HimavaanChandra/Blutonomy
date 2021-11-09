@@ -14,11 +14,11 @@ D3 = norm(A3_true - B3_true);
 
 % subtract movement of B from movement of A to get net vector
 %v1 = A1_A2 - (B2_true - B1_true)
-[A11, A12] = vectorInCircles(A1_A2, D1, B1_true, D2, B2_true)
+[A11, A12] = localiseVectors(A1_A2, D1, B1_true, D2, B2_true)
 
 % same for second pair
 % v2 = A2_A3 - (B3_true - B2_true)
-[A21, A22] = vectorInCircles(A2_A3, D2, B2_true, D3, B3_true)
+[A21, A22] = localiseVectors(A2_A3, D2, B2_true, D3, B3_true)
 % shift result by B2
 % A21 = A21 + B2_true;
 % A22 = A22 + B2_true;
@@ -57,12 +57,12 @@ plot([B1_true(1) B2_true(1) B3_true(1)],[B1_true(2) B2_true(2) B3_true(2)],'go')
 % plot(A1(row,1),A1(row,2),'kx')
 % plot(A2(col,1),A2(col,2),'kx')
 
-function [solution1, solution2] = vectorInCircles(v, d1, b1, d2, b2)
-v = v - (b2 - b1);
-theta = acos((d1^2 + norm(v)^2 - d2^2)/(2*d1*norm(v)));
+function [solution1, solution2] = localiseVectors(v, d1, b1, d2, b2)
+v = v - (b2 - b1); % net movement vector
+phi = acos((d1^2 + norm(v)^2 - d2^2)/(2*d1*norm(v))); % angle between v and B1
 vector_angle = atan2(v(2), v(1));
-[x1, y1] = pol2cart(theta+vector_angle, d1);
-[x2, y2] = pol2cart(-theta+vector_angle, d1);
-solution1 = [-x1, -y1] + b1; % first solution for A1
-solution2 = [-x2, -y2] + b1; % second solution for A1
+[x1, y1] = pol2cart(phi+vector_angle, d1); % first solution for B1 wrt A1
+[x2, y2] = pol2cart(-phi+vector_angle, d1); % second solution for B1 wrt A1
+solution1 = [-x1, -y1] + b1; % first solution for A1 wrt B1
+solution2 = [-x2, -y2] + b1; % second solution for A1 wrt B1
 end
