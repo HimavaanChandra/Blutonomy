@@ -1,9 +1,8 @@
-v_max = 1.5;
-v = v_max/2; % assume travelling half of max speed
+v = 2.057778; % assume travelling at 4 knots
 T = 60; % 1 min between readings
 d = T*v; % distance travelled between readings
 
-% assume B drift is negligible
+% assume B does not move
 B1_true = [0,0];
 B2_true = [0,0];
 B3_true = [0,0];
@@ -11,13 +10,17 @@ B3_true = [0,0];
 % error
 e_DVL = 0.001; % m/s
 e_compass = deg2rad(1); % rad
-v_sound = 1500; 
-e_speed_of_sound = 0.006*v_sound; % m/s
+e_temp = 1;
+temp = 20;
+salinity = 35;
+depth = 5;
+c_base = speed_of_sound(temp,salinity,depth);
 
-iterations = 100;
-max_Ax = 5000;
+iterations = 1000;
+max_Ax = 2000;
 e = zeros(iterations, max_Ax);
 for Ax = 1:max_Ax
+    Ax
     % A positions
     A1_true = [Ax,0];
     A2_true = [Ax+d/sqrt(2),d/sqrt(2)];
@@ -28,16 +31,20 @@ for Ax = 1:max_Ax
     A2_A3_true = A3_true - A2_true;
 
     for x = 1:iterations
+        v_sound = [speed_of_sound(normrnd(temp,e_temp),salinity,depth),...
+        speed_of_sound(normrnd(temp,e_temp),salinity,depth),...
+        speed_of_sound(normrnd(temp,e_temp),salinity,depth)];
+        
         % add error
-        t1 = norm(A1_true - B1_true)/unifrnd(v_sound-e_speed_of_sound, v_sound+e_speed_of_sound);
-        t2 = norm(A2_true - B2_true)/unifrnd(v_sound-e_speed_of_sound, v_sound+e_speed_of_sound);
-        t3 = norm(A3_true - B3_true)/unifrnd(v_sound-e_speed_of_sound, v_sound+e_speed_of_sound);
+        t1 = norm(A1_true - B1_true)/v_sound(1);
+        t2 = norm(A2_true - B2_true)/v_sound(2);
+        t3 = norm(A3_true - B3_true)/v_sound(3);
         A1_A2 = addError(A1_A2_true, e_compass, e_DVL*T);
         A2_A3 = addError(A2_A3_true, e_compass, e_DVL*T);
 
-        D1 = v_sound*t1;
-        D2 = v_sound*t2;
-        D3 = v_sound*t3;
+        D1 = c_base*t1;
+        D2 = c_base*t2;
+        D3 = c_base*t3;
 
         % calculate vector positions
         [A11, A12] = vectorInCircles(A1_A2, D1, B1_true, D2, B2_true);
@@ -58,41 +65,27 @@ for Ax = 1:max_Ax
         [error, idx] = min(diffs,[],'all','linear');
         [row,col] = ind2sub(size(diffs),idx);
 
-        A3_error = norm(A2(col,:) + A2_A3 - A3_true);
-        e(x,Ax) = A3_error;
-
-%         % plotting
-%         figure(1);
-%         clf(1);
-%         viscircles([B1_true; B2_true; B3_true],[D1, D2, D3],'LineWidth',1);
-%         axis equal
-%         hold on;
-%         plot([B1_true(1) B2_true(1) B3_true(1)],[B1_true(2) B2_true(2) B3_true(2)],'go');
-%         plot(A1_true(1), A1_true(2),'ro');
-%         plot(A2_true(1), A2_true(2),'ro');
-%         plot(A3_true(1), A3_true(2),'ro');
-%         
-%         quiver(A11(1), A11(2), A1_A2(1), A1_A2(2), 0,'b')
-%         quiver(A12(1), A12(2), A1_A2(1), A1_A2(2), 0,'b')
-%         
-%         quiver(A21(1), A21(2), A2_A3(1), A2_A3(2), 0,'g')
-%         quiver(A22(1), A22(2), A2_A3(1), A2_A3(2), 0,'g')
-%         
-%         plot(A1(row,1),A1(row,2),'kx')
-%         plot(A2(col,1),A2(col,2),'kx')
-%         pause();
+        A1_error = norm(A1(row,:) - A1_true);
+        e(x,Ax) = A1_error;
     end
 end
 
-plot(1:max_Ax, mean(e))
-title("Localisation error vs distance between vehicles (0.1% speed of sound error)");
-xlabel("Distance from Vehicle B to Vehicle A (m)");
+%%
+plot(1:max_Ax, mean(e),'b')
+title("Localisation error vs distance between vehicles (1°C std dev temperature error)");
+xlabel("Starting distance between Vehicle B to Vehicle A (m)");
 ylabel("Average error (m)");
+%%
+hold on;
+onepercent = sort(e,'descend');
+onepercent = onepercent(1:0.01*iterations,:);
+plot(1:max_Ax, mean(onepercent),'b:')
+legend(["Mean error","1% worst case error"]);
 
 function ve = addError(v, rotation_error, translation_error)
 [v_theta, v_r] = cart2pol(v(1), v(2));
-v_theta = unifrnd(v_theta-rotation_error, v_theta+rotation_error);
-v_r = unifrnd(v_r-translation_error, v_r+translation_error);
+v_theta = normrnd(v_theta, rotation_error);
+v_r = normrnd(v_r, translation_error);
 [vx, vy] = pol2cart(v_theta, v_r);
 ve = [vx, vy];
 end
